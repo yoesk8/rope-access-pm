@@ -5,7 +5,8 @@ import { buttonVariants } from '@/components/ui/button-variants'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { ArrowLeft, MapPin, Building2, CalendarDays, Clock, FileText } from 'lucide-react'
 import { cn } from '@/lib/utils'
-import type { ProjectStatus } from '@/types'
+import type { ProjectStatus, Profile } from '@/types'
+import { ManageTeamDialog } from './manage-team-dialog'
 
 const statusColors: Record<ProjectStatus, string> = {
   draft: 'bg-yellow-100 text-yellow-700',
@@ -21,10 +22,11 @@ export default async function ProjectDetailPage({ params }: { params: Promise<{ 
   const { data: project } = await supabase.from('projects').select('*').eq('id', id).single()
   if (!project) notFound()
 
-  const [{ data: members }, { data: timesheets }, { data: documents }] = await Promise.all([
+  const [{ data: members }, { data: timesheets }, { data: documents }, { data: allProfiles }] = await Promise.all([
     supabase.from('project_members').select('*, profile:profiles(*)').eq('project_id', id),
     supabase.from('timesheets').select('*, profile:profiles(full_name)').eq('project_id', id).order('date', { ascending: false }).limit(5),
     supabase.from('documents').select('*').eq('project_id', id).order('created_at', { ascending: false }).limit(5),
+    supabase.from('profiles').select('*').order('full_name'),
   ])
 
   const totalHours = timesheets?.reduce((sum, t) => sum + (t.hours ?? 0), 0) ?? 0
@@ -137,7 +139,14 @@ export default async function ProjectDetailPage({ params }: { params: Promise<{ 
 
         <div>
           <Card>
-            <CardHeader><CardTitle>Team ({members?.length ?? 0})</CardTitle></CardHeader>
+            <CardHeader className="flex flex-row items-center justify-between">
+              <CardTitle>Team ({members?.length ?? 0})</CardTitle>
+              <ManageTeamDialog
+                projectId={id}
+                allProfiles={(allProfiles ?? []) as Profile[]}
+                members={(members ?? []).map(m => ({ id: m.id, user_id: m.user_id, profile: m.profile as Profile }))}
+              />
+            </CardHeader>
             <CardContent>
               {members && members.length > 0 ? (
                 <div className="space-y-2">
