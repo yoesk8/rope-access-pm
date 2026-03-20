@@ -3,7 +3,7 @@ import { notFound } from 'next/navigation'
 import Link from 'next/link'
 import { buttonVariants } from '@/components/ui/button-variants'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { ArrowLeft, MapPin, Building2, CalendarDays, Clock, FileText } from 'lucide-react'
+import { ArrowLeft, MapPin, Building2, CalendarDays, Clock, FileText, ArrowUpFromLine, Anchor, AlertTriangle, Phone, Wrench, Tag } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { Suspense } from 'react'
 import type { ProjectStatus, Profile } from '@/types'
@@ -89,25 +89,85 @@ export default async function ProjectDetailPage({
               <CardHeader><CardTitle>Details</CardTitle></CardHeader>
               <CardContent className="space-y-3">
                 {project.client && (
-                  <div className="flex items-center gap-2 text-sm text-gray-600">
-                    <Building2 className="h-4 w-4 text-gray-400" />
-                    <span className="font-medium">Client:</span> {project.client}
+                  <div className="flex items-start gap-2 text-sm text-gray-600">
+                    <Building2 className="h-4 w-4 text-gray-400 mt-0.5 shrink-0" />
+                    <span><span className="font-medium">Client:</span> {project.client}</span>
                   </div>
                 )}
                 {project.location && (
-                  <div className="flex items-center gap-2 text-sm text-gray-600">
-                    <MapPin className="h-4 w-4 text-gray-400" />
-                    <span className="font-medium">Location:</span> {project.location}
+                  <div className="flex items-start gap-2 text-sm text-gray-600">
+                    <MapPin className="h-4 w-4 text-gray-400 mt-0.5 shrink-0" />
+                    <span><span className="font-medium">Location:</span> {project.location}</span>
                   </div>
                 )}
                 {(project.start_date || project.end_date) && (
-                  <div className="flex items-center gap-2 text-sm text-gray-600">
-                    <CalendarDays className="h-4 w-4 text-gray-400" />
-                    <span className="font-medium">Dates:</span> {project.start_date ?? '—'} → {project.end_date ?? '—'}
+                  <div className="flex items-start gap-2 text-sm text-gray-600">
+                    <CalendarDays className="h-4 w-4 text-gray-400 mt-0.5 shrink-0" />
+                    <span><span className="font-medium">Dates:</span> {project.start_date ?? '—'} → {project.end_date ?? '—'}</span>
+                  </div>
+                )}
+                {(project as any).job_category && (
+                  <div className="flex items-start gap-2 text-sm text-gray-600">
+                    <Tag className="h-4 w-4 text-gray-400 mt-0.5 shrink-0" />
+                    <span><span className="font-medium">Category:</span> {(project as any).job_category.replace(/_/g, ' ').replace(/\b\w/g, (c: string) => c.toUpperCase())}</span>
+                  </div>
+                )}
+                {(project as any).access_type && (
+                  <div className="flex items-start gap-2 text-sm text-gray-600">
+                    <ArrowUpFromLine className="h-4 w-4 text-gray-400 mt-0.5 shrink-0" />
+                    <span><span className="font-medium">Access:</span> {(project as any).access_type.replace(/_/g, ' ').toUpperCase()}</span>
+                  </div>
+                )}
+                {(project as any).max_height && (
+                  <div className="flex items-start gap-2 text-sm text-gray-600">
+                    <ArrowUpFromLine className="h-4 w-4 text-gray-400 mt-0.5 shrink-0 rotate-90" />
+                    <span><span className="font-medium">Max Height:</span> {(project as any).max_height}m</span>
+                  </div>
+                )}
+                {(project as any).anchor_points && (
+                  <div className="flex items-start gap-2 text-sm text-gray-600">
+                    <Anchor className="h-4 w-4 text-gray-400 mt-0.5 shrink-0" />
+                    <span><span className="font-medium">Anchor Points:</span> {(project as any).anchor_points}</span>
+                  </div>
+                )}
+                {(project as any).rigging_details && (
+                  <div className="flex items-start gap-2 text-sm text-gray-600">
+                    <Wrench className="h-4 w-4 text-gray-400 mt-0.5 shrink-0" />
+                    <span><span className="font-medium">Rigging:</span> {(project as any).rigging_details}</span>
+                  </div>
+                )}
+                {(project as any).risk_considerations && (
+                  <div className="flex items-start gap-2 text-sm text-gray-600">
+                    <AlertTriangle className="h-4 w-4 text-yellow-400 mt-0.5 shrink-0" />
+                    <span><span className="font-medium">Risks:</span> {(project as any).risk_considerations}</span>
+                  </div>
+                )}
+                {(project as any).site_contact_name && (
+                  <div className="flex items-start gap-2 text-sm text-gray-600">
+                    <Phone className="h-4 w-4 text-gray-400 mt-0.5 shrink-0" />
+                    <span>
+                      <span className="font-medium">Site Contact:</span>{' '}
+                      {(project as any).site_contact_name}
+                      {(project as any).site_contact_role && ` (${(project as any).site_contact_role})`}
+                      {(project as any).site_contact_phone && ` · ${(project as any).site_contact_phone}`}
+                    </span>
+                  </div>
+                )}
+                {((project as any).tools_needed as string[])?.length > 0 && (
+                  <div className="flex items-start gap-2 text-sm text-gray-600">
+                    <Wrench className="h-4 w-4 text-gray-400 mt-0.5 shrink-0" />
+                    <div>
+                      <span className="font-medium">Tools:</span>
+                      <div className="flex flex-wrap gap-1.5 mt-1.5">
+                        {((project as any).tools_needed as string[]).map((t: string) => (
+                          <span key={t} className="rounded-full bg-gray-100 px-2 py-0.5 text-xs text-gray-600">{t}</span>
+                        ))}
+                      </div>
+                    </div>
                   </div>
                 )}
                 {project.description && (
-                  <p className="text-sm text-gray-600 pt-2">{project.description}</p>
+                  <p className="text-sm text-gray-600 pt-2 border-t">{project.description}</p>
                 )}
               </CardContent>
             </Card>
