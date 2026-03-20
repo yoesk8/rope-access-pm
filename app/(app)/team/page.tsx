@@ -3,6 +3,7 @@ import { redirect } from 'next/navigation'
 import { Card, CardContent } from '@/components/ui/card'
 import { Phone } from 'lucide-react'
 import { InviteDialog } from './invite-dialog'
+import { DeleteMemberButton } from './delete-member-button'
 import type { Role } from '@/types'
 
 const roleColors: Record<Role, string> = {
@@ -35,7 +36,7 @@ export default async function TeamPage() {
       {members && members.length > 0 ? (
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {members.map(member => (
-            <Card key={member.id}>
+            <Card key={member.id} className="group">
               <CardContent className="p-5">
                 <div className="flex items-start gap-4">
                   <div className="h-10 w-10 rounded-full bg-gray-200 flex items-center justify-center text-sm font-semibold text-gray-600 shrink-0">
@@ -57,6 +58,11 @@ export default async function TeamPage() {
                     <p className="text-xs text-gray-400 mt-1">
                       Joined {new Date(member.created_at).toLocaleDateString()}
                     </p>
+                    {canInvite && member.id !== user!.id && (
+                      <div className="mt-2">
+                        <DeleteMemberButton userId={member.id} name={member.full_name ?? 'this member'} />
+                      </div>
+                    )}
                   </div>
                 </div>
               </CardContent>
