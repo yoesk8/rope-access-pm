@@ -14,8 +14,11 @@ export async function inviteMember(formData: FormData) {
     process.env.SUPABASE_SERVICE_ROLE_KEY!,
   )
 
+  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? 'http://localhost:3000'
+
   const { error } = await supabase.auth.admin.inviteUserByEmail(email, {
     data: { full_name: fullName, role },
+    redirectTo: `${siteUrl}/auth/confirm`,
   })
 
   if (error) return { error: error.message }
