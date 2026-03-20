@@ -101,6 +101,7 @@ export function InviteDialog() {
               <label className="text-sm font-medium text-gray-700">Role</label>
               <select name="role" required className={inputCls}>
                 <option value="technician">Technician</option>
+                <option value="lead_tech">Lead Technician</option>
                 <option value="manager">Manager</option>
               </select>
             </div>

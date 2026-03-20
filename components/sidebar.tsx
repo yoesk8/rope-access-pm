@@ -23,14 +23,16 @@ function SidebarContent({ onNavigate, unreadCount }: { onNavigate?: () => void; 
   const router = useRouter()
   const { role } = useUser()
   const isTech = role === 'technician'
+  const isLeadTech = role === 'lead_tech'
+  const isManager = role === 'admin' || role === 'manager'
 
   const nav = [
     { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard, show: true },
-    { href: '/projects', label: isTech ? 'My Jobs' : 'Projects', icon: FolderKanban, show: true },
-    { href: '/team', label: 'Team', icon: Users, show: !isTech },
+    { href: '/projects', label: (isTech || isLeadTech) ? 'My Jobs' : 'Projects', icon: FolderKanban, show: true },
+    { href: '/team', label: 'Team', icon: Users, show: isManager },
     { href: '/timesheets', label: 'Timesheets', icon: Clock, show: true },
     { href: '/documents', label: 'Documents', icon: FileText, show: !isTech },
-    { href: '/messages', label: 'Messages', icon: MessageSquare, show: !isTech, badge: unreadCount },
+    { href: '/messages', label: 'Messages', icon: MessageSquare, show: isManager, badge: unreadCount },
   ]
 
   async function handleSignOut() {

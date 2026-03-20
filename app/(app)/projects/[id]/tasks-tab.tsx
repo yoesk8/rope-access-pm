@@ -1,12 +1,14 @@
 'use client'
 
-import { useState, useTransition } from 'react'
+import { useState, useTransition, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { Card, CardContent } from '@/components/ui/card'
-import { CheckCircle2, Circle, Clock3, ChevronDown, Plus, X } from 'lucide-react'
+import { CheckCircle2, Circle, Clock3, Plus, X, Camera, ChevronDown, ChevronUp } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import type { Profile } from '@/types'
+
+interface TaskPhoto { id: string; photo_url: string }
 
 interface Task {
   id: string
@@ -17,6 +19,7 @@ interface Task {
   due_date: string | null
   assigned_to: string | null
   assignee: Pick<Profile, 'id' | 'full_name'> | null
+  task_photos: TaskPhoto[]
 }
 
 const priorityColors = {
@@ -41,6 +44,110 @@ interface Props {
   projectId: string
   tasks: Task[]
   members: Pick<Profile, 'id' | 'full_name'>[]
+}
+
+function TaskCard({ task, projectId, isPending, onCycleStatus, onDelete }: {
+  task: Task
+  projectId: string
+  isPending: boolean
+  onCycleStatus: (task: Task) => void
+  onDelete: (id: string) => void
+}) {
+  const router = useRouter()
+  const [expanded, setExpanded] = useState(false)
+  const [uploading, setUploading] = useState(false)
+  const fileRef = useRef<HTMLInputElement>(null)
+
+  async function uploadPhoto(file: File) {
+    setUploading(true)
+    const supabase = createClient()
+    const { data: { user } } = await supabase.auth.getUser()
+    const ext = file.name.split('.').pop()
+    const path = `${projectId}/${task.id}/${Date.now()}.${ext}`
+    const { data: upload, error } = await supabase.storage.from('task-photos').upload(path, file)
+    if (error || !upload) { setUploading(false); return }
+    const { data: { publicUrl } } = supabase.storage.from('task-photos').getPublicUrl(path)
+    await supabase.from('task_photos').insert({ task_id: task.id, photo_url: publicUrl, uploaded_by: user?.id })
+    setUploading(false)
+    router.refresh()
+  }
+
+  return (
+    <div className="rounded-lg border bg-white group">
+      <div className="flex items-start gap-3 p-3">
+        <button onClick={() => onCycleStatus(task)} disabled={isPending} className="mt-0.5 shrink-0">
+          {statusIcon[task.status]}
+        </button>
+        <div className="flex-1 min-w-0">
+          <p className={cn('text-sm font-medium', task.status === 'done' && 'line-through text-gray-400')}>
+            {task.title}
+          </p>
+          {task.description && <p className="text-xs text-gray-500 mt-0.5">{task.description}</p>}
+          <div className="flex flex-wrap gap-2 mt-1.5">
+            <span className={`text-xs px-1.5 py-0.5 rounded-full font-medium capitalize ${priorityColors[task.priority]}`}>
+              {task.priority}
+            </span>
+            {task.assignee?.full_name && (
+              <span className="text-xs text-gray-500">→ {task.assignee.full_name}</span>
+            )}
+            {task.due_date && (
+              <span className="text-xs text-gray-400">Due {task.due_date}</span>
+            )}
+            {task.task_photos.length > 0 && (
+              <button
+                onClick={() => setExpanded(v => !v)}
+                className="inline-flex items-center gap-1 text-xs text-blue-500 hover:text-blue-700"
+              >
+                <Camera className="h-3 w-3" /> {task.task_photos.length} photo{task.task_photos.length > 1 ? 's' : ''}
+                {expanded ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />}
+              </button>
+            )}
+          </div>
+        </div>
+        <div className="flex items-center gap-1 shrink-0">
+          <button
+            onClick={() => fileRef.current?.click()}
+            disabled={uploading}
+            className="opacity-0 group-hover:opacity-100 text-gray-300 hover:text-blue-500 transition-all"
+            title="Attach photo"
+          >
+            <Camera className="h-3.5 w-3.5" />
+          </button>
+          <button
+            onClick={() => onDelete(task.id)}
+            disabled={isPending}
+            className="opacity-0 group-hover:opacity-100 text-gray-300 hover:text-red-500 transition-all"
+          >
+            <X className="h-3.5 w-3.5" />
+          </button>
+        </div>
+        <input
+          ref={fileRef}
+          type="file"
+          accept="image/*"
+          className="hidden"
+          onChange={e => { const f = e.target.files?.[0]; if (f) uploadPhoto(f) }}
+        />
+      </div>
+
+      {/* Photo gallery */}
+      {expanded && task.task_photos.length > 0 && (
+        <div className="px-3 pb-3 pt-0 border-t">
+          <div className="grid grid-cols-3 gap-2 mt-2">
+            {task.task_photos.map(photo => (
+              <a key={photo.id} href={photo.photo_url} target="_blank" rel="noopener noreferrer">
+                <img
+                  src={photo.photo_url}
+                  alt="Task photo"
+                  className="w-full h-20 object-cover rounded-lg hover:opacity-90 transition-opacity"
+                />
+              </a>
+            ))}
+          </div>
+        </div>
+      )}
+    </div>
+  )
 }
 
 export function TasksTab({ projectId, tasks: initialTasks, members }: Props) {
@@ -96,35 +203,14 @@ export function TasksTab({ projectId, tasks: initialTasks, members }: Props) {
         ) : (
           <div className="space-y-2 mb-4">
             {items.map(task => (
-              <div key={task.id} className="flex items-start gap-3 rounded-lg border bg-white p-3 group">
-                <button onClick={() => cycleStatus(task)} disabled={isPending} className="mt-0.5 shrink-0">
-                  {statusIcon[task.status]}
-                </button>
-                <div className="flex-1 min-w-0">
-                  <p className={cn('text-sm font-medium', task.status === 'done' && 'line-through text-gray-400')}>
-                    {task.title}
-                  </p>
-                  {task.description && <p className="text-xs text-gray-500 mt-0.5">{task.description}</p>}
-                  <div className="flex flex-wrap gap-2 mt-1.5">
-                    <span className={`text-xs px-1.5 py-0.5 rounded-full font-medium capitalize ${priorityColors[task.priority]}`}>
-                      {task.priority}
-                    </span>
-                    {task.assignee?.full_name && (
-                      <span className="text-xs text-gray-500">→ {task.assignee.full_name}</span>
-                    )}
-                    {task.due_date && (
-                      <span className="text-xs text-gray-400">Due {task.due_date}</span>
-                    )}
-                  </div>
-                </div>
-                <button
-                  onClick={() => deleteTask(task.id)}
-                  disabled={isPending}
-                  className="opacity-0 group-hover:opacity-100 text-gray-300 hover:text-red-500 transition-all shrink-0"
-                >
-                  <X className="h-3.5 w-3.5" />
-                </button>
-              </div>
+              <TaskCard
+                key={task.id}
+                task={task}
+                projectId={projectId}
+                isPending={isPending}
+                onCycleStatus={cycleStatus}
+                onDelete={deleteTask}
+              />
             ))}
           </div>
         )}

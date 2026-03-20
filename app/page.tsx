@@ -324,12 +324,12 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* Why not fieldwire */}
+      {/* Why RopeAccess PM */}
       <section className="py-24 px-6 bg-white">
         <div className="max-w-4xl mx-auto">
           <div className="text-center space-y-4 mb-12">
-            <h2 className="text-3xl font-bold text-gray-900">Why not just use Fieldwire?</h2>
-            <p className="text-gray-500 text-lg">Fieldwire is a great tool — for general construction. Rope access is different.</p>
+            <h2 className="text-3xl font-bold text-gray-900">Built for rope access, not adapted for it</h2>
+            <p className="text-gray-500 text-lg">Generic construction tools weren't designed with working at height in mind. RopeAccess PM was.</p>
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
             {[

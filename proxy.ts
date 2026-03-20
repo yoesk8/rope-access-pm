@@ -39,14 +39,23 @@ export async function proxy(request: NextRequest) {
     return NextResponse.redirect(new URL('/dashboard', request.url))
   }
 
-  // Block technicians from manager-only routes
+  // Block restricted routes based on role
   if (user) {
-    const techRestrictedPaths = ['/team', '/documents', '/messages']
-    const isTechRestricted = techRestrictedPaths.some(p => pathname === p || pathname.startsWith(p + '/'))
-    if (isTechRestricted) {
+    // technicians: blocked from /team, /documents, /messages
+    // lead_tech: blocked from /team, /messages (but CAN access /documents)
+    const allRestrictedPaths = ['/team', '/documents', '/messages']
+    const isRestricted = allRestrictedPaths.some(p => pathname === p || pathname.startsWith(p + '/'))
+    if (isRestricted) {
       const { data: profile } = await supabase.from('profiles').select('role').eq('id', user.id).single()
       if (profile?.role === 'technician') {
         return NextResponse.redirect(new URL('/dashboard', request.url))
+      }
+      // lead_tech can access /documents but not /team or /messages
+      if (profile?.role === 'lead_tech') {
+        const leadTechRestricted = ['/team', '/messages']
+        if (leadTechRestricted.some(p => pathname === p || pathname.startsWith(p + '/'))) {
+          return NextResponse.redirect(new URL('/dashboard', request.url))
+        }
       }
     }
   }

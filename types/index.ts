@@ -1,4 +1,4 @@
-export type Role = 'admin' | 'manager' | 'technician'
+export type Role = 'admin' | 'manager' | 'lead_tech' | 'technician'
 export type ProjectStatus = 'draft' | 'active' | 'completed' | 'cancelled'
 export type TimesheetStatus = 'pending' | 'approved' | 'rejected'
 export type DocumentType = 'risk_assessment' | 'method_statement' | 'inspection_report' | 'certificate' | 'other'

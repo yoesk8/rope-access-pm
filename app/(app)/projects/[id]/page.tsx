@@ -9,6 +9,7 @@ import { Suspense } from 'react'
 import type { ProjectStatus, Profile } from '@/types'
 import { ManageTeamDialog } from './manage-team-dialog'
 import { ContactManagerDialog } from '@/components/contact-manager-dialog'
+import { MarkCompleteButton } from './mark-complete-button'
 import { TabsNav } from './tabs-nav'
 import { TasksTab } from './tasks-tab'
 import { PhotosTab } from './photos-tab'
@@ -51,7 +52,7 @@ export default async function ProjectDetailPage({
     supabase.from('profiles').select('*').order('full_name'),
     supabase.from('timesheets').select('*, profile:profiles(full_name)').eq('project_id', id).order('date', { ascending: false }).limit(5),
     supabase.from('documents').select('*').eq('project_id', id).order('created_at', { ascending: false }).limit(5),
-    supabase.from('tasks').select('*, assignee:profiles!tasks_assigned_to_fkey(id, full_name)').eq('project_id', id).order('created_at'),
+    supabase.from('tasks').select('*, assignee:profiles!tasks_assigned_to_fkey(id, full_name), task_photos(id, photo_url)').eq('project_id', id).order('created_at'),
     supabase.from('photos').select('*, uploader:profiles(full_name)').eq('project_id', id).order('created_at', { ascending: false }),
     supabase.from('checklist_templates').select('*').order('type'),
     supabase.from('checklist_submissions').select('*, submitter:profiles(full_name), template:checklist_templates(items)').eq('project_id', id).order('created_at', { ascending: false }),
@@ -60,9 +61,13 @@ export default async function ProjectDetailPage({
 
   const { data: { user } } = await supabase.auth.getUser()
   const { data: currentProfile } = await supabase.from('profiles').select('role').eq('id', user!.id).single()
-  const isTech = currentProfile?.role === 'technician'
+  const currentRole = currentProfile?.role
+  const isTech = currentRole === 'technician'
+  const isLeadTech = currentRole === 'lead_tech'
+  const canManage = currentRole === 'admin' || currentRole === 'manager'
+  const canComplete = canManage || isLeadTech
 
-  // Find a manager/admin to contact (project creator or first admin/manager)
+  // Find a manager/admin to contact
   const manager = (allProfiles ?? []).find(p => p.role === 'admin' || p.role === 'manager')
 
   const totalHours = timesheets?.reduce((sum, t) => sum + (t.hours ?? 0), 0) ?? 0
@@ -82,13 +87,16 @@ export default async function ProjectDetailPage({
             {project.status}
           </span>
         </div>
-        {isTech && manager && (
+        {(isTech || isLeadTech) && manager && (
           <ContactManagerDialog
             projectId={id}
             projectName={project.name}
             managerId={manager.id}
             managerName={manager.full_name ?? 'Manager'}
           />
+        )}
+        {canComplete && project.status === 'active' && (
+          <MarkCompleteButton projectId={id} />
         )}
       </div>
 
@@ -255,7 +263,7 @@ export default async function ProjectDetailPage({
             <Card>
               <CardHeader className="flex flex-row items-center justify-between">
                 <CardTitle>Team ({members?.length ?? 0})</CardTitle>
-                {!isTech && (
+                {(canManage || isLeadTech) && (
                   <ManageTeamDialog
                     projectId={id}
                     allProfiles={(allProfiles ?? []) as Profile[]}
