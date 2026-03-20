@@ -77,7 +77,7 @@ const faqs = [
   },
   {
     q: 'What counts as a "user"?',
-    a: 'Any team member with an active account — admin, manager, lead technician, or technician. Deactivated accounts don't count toward your limit.',
+    a: "Any team member with an active account — admin, manager, lead technician, or technician. Deactivated accounts don't count toward your limit.",
   },
   {
     q: 'Is there a free trial?',
