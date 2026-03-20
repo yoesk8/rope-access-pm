@@ -3,18 +3,18 @@ import { notFound } from 'next/navigation'
 import Link from 'next/link'
 import { buttonVariants } from '@/components/ui/button-variants'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { ArrowLeft, MapPin, Building2, CalendarDays, Clock, FileText, ArrowUpFromLine, Anchor, AlertTriangle, Phone, Wrench, Tag } from 'lucide-react'
+
+import { MapPin, Building2, CalendarDays, Clock, FileText, ArrowUpFromLine, Anchor, AlertTriangle, Phone, Wrench, Tag } from 'lucide-react'
 import { cn } from '@/lib/utils'
-import { Suspense } from 'react'
 import type { ProjectStatus, Profile } from '@/types'
 import { ManageTeamDialog } from './manage-team-dialog'
 import { ContactManagerDialog } from '@/components/contact-manager-dialog'
 import { MarkCompleteButton } from './mark-complete-button'
-import { TabsNav } from './tabs-nav'
 import { TasksTab } from './tasks-tab'
 import { PhotosTab } from './photos-tab'
 import { ChecklistsTab } from './checklists-tab'
 import { DailyLogsTab } from './daily-logs-tab'
+import { DocumentsTab } from './documents-tab'
 
 const statusColors: Record<ProjectStatus, string> = {
   draft: 'bg-yellow-100 text-yellow-700',
@@ -78,9 +78,6 @@ export default async function ProjectDetailPage({
     <div className="space-y-6 max-w-4xl">
       {/* Header */}
       <div className="flex items-center gap-3 flex-wrap">
-        <Link href="/projects" className={cn(buttonVariants({ variant: 'ghost', size: 'sm' }))}>
-          <ArrowLeft className="h-4 w-4" />
-        </Link>
         <div className="flex flex-1 items-center gap-3 flex-wrap">
           <h1 className="text-2xl font-bold text-gray-900">{project.name}</h1>
           <span className={`text-xs font-medium px-2 py-1 rounded-full ${statusColors[project.status as ProjectStatus]}`}>
@@ -99,11 +96,6 @@ export default async function ProjectDetailPage({
           <MarkCompleteButton projectId={id} />
         )}
       </div>
-
-      {/* Tabs */}
-      <Suspense>
-        <TabsNav projectId={id} />
-      </Suspense>
 
       {/* Tab content */}
       {tab === 'overview' && (
@@ -314,6 +306,42 @@ export default async function ProjectDetailPage({
 
       {tab === 'logs' && (
         <DailyLogsTab projectId={id} logs={(logs ?? []) as any} />
+      )}
+
+      {tab === 'documents' && (
+        <DocumentsTab projectId={id} documents={(documents ?? []) as any} canUpload={!isTech} />
+      )}
+
+      {tab === 'team' && !isTech && (
+        <div className="space-y-4">
+          <div className="flex items-center justify-between">
+            <h2 className="text-lg font-semibold text-gray-900">Team ({members?.length ?? 0})</h2>
+            {(canManage || isLeadTech) && (
+              <ManageTeamDialog
+                projectId={id}
+                allProfiles={(allProfiles ?? []) as Profile[]}
+                members={memberProfiles}
+              />
+            )}
+          </div>
+          {members && members.length > 0 ? (
+            <div className="space-y-2">
+              {members.map(m => (
+                <div key={m.id} className="flex items-center gap-3 rounded-lg border bg-white p-3">
+                  <div className="h-9 w-9 rounded-full bg-gray-200 flex items-center justify-center text-sm font-semibold text-gray-600">
+                    {((m.profile as any)?.full_name ?? '?')[0]?.toUpperCase()}
+                  </div>
+                  <div>
+                    <p className="text-sm font-medium text-gray-900">{(m.profile as any)?.full_name ?? 'Unknown'}</p>
+                    <p className="text-xs text-gray-400 capitalize">{(m.profile as any)?.role ?? ''}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <p className="text-sm text-gray-500">No members assigned to this job yet.</p>
+          )}
+        </div>
       )}
     </div>
   )

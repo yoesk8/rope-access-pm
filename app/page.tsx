@@ -79,9 +79,14 @@ export default function LandingPage() {
             <ShieldCheck className="h-6 w-6 text-blue-600" />
             <span className="font-bold text-gray-900 text-lg">RopeAccess PM</span>
           </div>
-          <Link href="/login" className={cn(buttonVariants({ size: 'sm' }))}>
-            Sign in
-          </Link>
+          <div className="flex items-center gap-4">
+            <Link href="/pricing" className="text-sm text-gray-600 hover:text-gray-900 hidden sm:block">
+              Pricing
+            </Link>
+            <Link href="/login" className={cn(buttonVariants({ size: 'sm' }))}>
+              Sign in
+            </Link>
+          </div>
         </div>
       </header>
 
