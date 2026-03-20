@@ -89,7 +89,7 @@ const faqs = [
   },
   {
     q: 'Is my data secure?',
-    a: 'All data is encrypted at rest and in transit. We use Supabase (built on AWS) with row-level security so each organisation's data is fully isolated.',
+    a: "All data is encrypted at rest and in transit. We use Supabase (built on AWS) with row-level security so each organisation's data is fully isolated.",
   },
 ]
 
