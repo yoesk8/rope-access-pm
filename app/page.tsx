@@ -1,4 +1,5 @@
 import Link from 'next/link'
+import { InviteHandler } from '@/components/invite-handler'
 import { buttonVariants } from '@/components/ui/button-variants'
 import { cn } from '@/lib/utils'
 import {
@@ -36,6 +37,7 @@ const features = [
 export default function LandingPage() {
   return (
     <div className="min-h-screen bg-white flex flex-col">
+      <InviteHandler />
       {/* Nav */}
       <header className="border-b border-gray-100">
         <div className="max-w-6xl mx-auto px-6 h-16 flex items-center justify-between">
