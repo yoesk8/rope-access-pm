@@ -1,7 +1,8 @@
 import { createClient } from '@/lib/supabase/server'
+import { redirect } from 'next/navigation'
 import { Card, CardContent } from '@/components/ui/card'
-import { Badge } from '@/components/ui/badge'
 import { Phone } from 'lucide-react'
+import { InviteDialog } from './invite-dialog'
 import type { Role } from '@/types'
 
 const roleColors: Record<Role, string> = {
@@ -12,14 +13,24 @@ const roleColors: Record<Role, string> = {
 
 export default async function TeamPage() {
   const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  const { data: profile } = await supabase.from('profiles').select('role').eq('id', user!.id).single()
+
+  if (profile?.role === 'technician') redirect('/dashboard')
+
   const { data: members } = await supabase
     .from('profiles')
     .select('*')
     .order('full_name', { ascending: true })
 
+  const canInvite = profile?.role === 'admin' || profile?.role === 'manager'
+
   return (
     <div className="space-y-6">
-      <h1 className="text-2xl font-bold text-gray-900">Team</h1>
+      <div className="flex items-center justify-between">
+        <h1 className="text-2xl font-bold text-gray-900">Team</h1>
+        {canInvite && <InviteDialog />}
+      </div>
 
       {members && members.length > 0 ? (
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
@@ -55,7 +66,8 @@ export default async function TeamPage() {
       ) : (
         <Card>
           <CardContent className="py-16 text-center">
-            <p className="text-gray-500">No team members yet. Members appear here after they sign up.</p>
+            <p className="text-gray-500 mb-4">No team members yet.</p>
+            {canInvite && <p className="text-sm text-gray-400">Use "Invite Member" to add your first technician.</p>}
           </CardContent>
         </Card>
       )}

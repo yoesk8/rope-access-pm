@@ -39,6 +39,18 @@ export async function proxy(request: NextRequest) {
     return NextResponse.redirect(new URL('/dashboard', request.url))
   }
 
+  // Block technicians from manager-only routes
+  if (user) {
+    const techRestrictedPaths = ['/team', '/documents', '/messages']
+    const isTechRestricted = techRestrictedPaths.some(p => pathname === p || pathname.startsWith(p + '/'))
+    if (isTechRestricted) {
+      const { data: profile } = await supabase.from('profiles').select('role').eq('id', user.id).single()
+      if (profile?.role === 'technician') {
+        return NextResponse.redirect(new URL('/dashboard', request.url))
+      }
+    }
+  }
+
   return supabaseResponse
 }
 

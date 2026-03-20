@@ -2,7 +2,7 @@ import { createClient } from '@/lib/supabase/server'
 import Link from 'next/link'
 import { buttonVariants } from '@/components/ui/button-variants'
 import { Card, CardContent } from '@/components/ui/card'
-import { Plus, MapPin, Building2, CalendarDays } from 'lucide-react'
+import { Plus, MapPin, Building2, CalendarDays, Tag } from 'lucide-react'
 import type { ProjectStatus } from '@/types'
 import { cn } from '@/lib/utils'
 
@@ -15,6 +15,11 @@ const statusColors: Record<ProjectStatus, string> = {
 
 export default async function ProjectsPage() {
   const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  const { data: profile } = await supabase.from('profiles').select('role').eq('id', user!.id).single()
+  const isTech = profile?.role === 'technician'
+
+  // RLS already filters by membership for techs — just fetch all visible projects
   const { data: projects } = await supabase
     .from('projects')
     .select('*')
@@ -23,10 +28,12 @@ export default async function ProjectsPage() {
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold text-gray-900">Projects</h1>
-        <Link href="/projects/new" className={cn(buttonVariants())}>
-          <Plus className="h-4 w-4 mr-2" />New Project
-        </Link>
+        <h1 className="text-2xl font-bold text-gray-900">{isTech ? 'My Jobs' : 'Projects'}</h1>
+        {!isTech && (
+          <Link href="/projects/new" className={cn(buttonVariants())}>
+            <Plus className="h-4 w-4 mr-2" />New Job
+          </Link>
+        )}
       </div>
 
       {projects && projects.length > 0 ? (
@@ -41,6 +48,12 @@ export default async function ProjectsPage() {
                       {project.status}
                     </span>
                   </div>
+                  {(project as any).job_category && (
+                    <div className="flex items-center gap-1.5 text-xs text-gray-400">
+                      <Tag className="h-3 w-3" />
+                      {(project as any).job_category.replace(/_/g, ' ').replace(/\b\w/g, (c: string) => c.toUpperCase())}
+                    </div>
+                  )}
                   {project.client && (
                     <div className="flex items-center gap-1.5 text-sm text-gray-500">
                       <Building2 className="h-3.5 w-3.5" />
@@ -67,10 +80,12 @@ export default async function ProjectsPage() {
       ) : (
         <Card>
           <CardContent className="py-16 text-center">
-            <p className="text-gray-500 mb-4">No projects yet.</p>
-            <Link href="/projects/new" className={cn(buttonVariants())}>
-              <Plus className="h-4 w-4 mr-2" />Create your first project
-            </Link>
+            <p className="text-gray-500 mb-4">{isTech ? "You haven't been assigned to any jobs yet." : 'No projects yet.'}</p>
+            {!isTech && (
+              <Link href="/projects/new" className={cn(buttonVariants())}>
+                <Plus className="h-4 w-4 mr-2" />Create your first job
+              </Link>
+            )}
           </CardContent>
         </Card>
       )}

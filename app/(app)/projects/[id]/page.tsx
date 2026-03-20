@@ -8,6 +8,7 @@ import { cn } from '@/lib/utils'
 import { Suspense } from 'react'
 import type { ProjectStatus, Profile } from '@/types'
 import { ManageTeamDialog } from './manage-team-dialog'
+import { ContactManagerDialog } from '@/components/contact-manager-dialog'
 import { TabsNav } from './tabs-nav'
 import { TasksTab } from './tasks-tab'
 import { PhotosTab } from './photos-tab'
@@ -57,6 +58,13 @@ export default async function ProjectDetailPage({
     supabase.from('daily_logs').select('*, creator:profiles(full_name)').eq('project_id', id).order('date', { ascending: false }),
   ])
 
+  const { data: { user } } = await supabase.auth.getUser()
+  const { data: currentProfile } = await supabase.from('profiles').select('role').eq('id', user!.id).single()
+  const isTech = currentProfile?.role === 'technician'
+
+  // Find a manager/admin to contact (project creator or first admin/manager)
+  const manager = (allProfiles ?? []).find(p => p.role === 'admin' || p.role === 'manager')
+
   const totalHours = timesheets?.reduce((sum, t) => sum + (t.hours ?? 0), 0) ?? 0
   const memberProfiles = (members ?? []).map(m => ({ id: m.id, user_id: m.user_id, profile: m.profile as Profile }))
   const assignableMembers = (allProfiles ?? []).map(p => ({ id: p.id, full_name: p.full_name }))
@@ -64,16 +72,24 @@ export default async function ProjectDetailPage({
   return (
     <div className="space-y-6 max-w-4xl">
       {/* Header */}
-      <div className="flex items-center gap-3">
+      <div className="flex items-center gap-3 flex-wrap">
         <Link href="/projects" className={cn(buttonVariants({ variant: 'ghost', size: 'sm' }))}>
           <ArrowLeft className="h-4 w-4" />
         </Link>
-        <div className="flex items-center gap-3 flex-wrap">
+        <div className="flex flex-1 items-center gap-3 flex-wrap">
           <h1 className="text-2xl font-bold text-gray-900">{project.name}</h1>
           <span className={`text-xs font-medium px-2 py-1 rounded-full ${statusColors[project.status as ProjectStatus]}`}>
             {project.status}
           </span>
         </div>
+        {isTech && manager && (
+          <ContactManagerDialog
+            projectId={id}
+            projectName={project.name}
+            managerId={manager.id}
+            managerName={manager.full_name ?? 'Manager'}
+          />
+        )}
       </div>
 
       {/* Tabs */}
@@ -239,11 +255,13 @@ export default async function ProjectDetailPage({
             <Card>
               <CardHeader className="flex flex-row items-center justify-between">
                 <CardTitle>Team ({members?.length ?? 0})</CardTitle>
-                <ManageTeamDialog
-                  projectId={id}
-                  allProfiles={(allProfiles ?? []) as Profile[]}
-                  members={memberProfiles}
-                />
+                {!isTech && (
+                  <ManageTeamDialog
+                    projectId={id}
+                    allProfiles={(allProfiles ?? []) as Profile[]}
+                    members={memberProfiles}
+                  />
+                )}
               </CardHeader>
               <CardContent>
                 {members && members.length > 0 ? (

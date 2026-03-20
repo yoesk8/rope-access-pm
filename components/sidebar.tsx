@@ -4,6 +4,7 @@ import { useState } from 'react'
 import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
+import { useUser } from '@/components/user-provider'
 import { cn } from '@/lib/utils'
 import {
   LayoutDashboard,
@@ -14,19 +15,23 @@ import {
   LogOut,
   Menu,
   X,
+  MessageSquare,
 } from 'lucide-react'
 
-const nav = [
-  { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
-  { href: '/projects', label: 'Projects', icon: FolderKanban },
-  { href: '/team', label: 'Team', icon: Users },
-  { href: '/timesheets', label: 'Timesheets', icon: Clock },
-  { href: '/documents', label: 'Documents', icon: FileText },
-]
-
-function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
+function SidebarContent({ onNavigate, unreadCount }: { onNavigate?: () => void; unreadCount: number }) {
   const pathname = usePathname()
   const router = useRouter()
+  const { role } = useUser()
+  const isTech = role === 'technician'
+
+  const nav = [
+    { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard, show: true },
+    { href: '/projects', label: isTech ? 'My Jobs' : 'Projects', icon: FolderKanban, show: true },
+    { href: '/team', label: 'Team', icon: Users, show: !isTech },
+    { href: '/timesheets', label: 'Timesheets', icon: Clock, show: true },
+    { href: '/documents', label: 'Documents', icon: FileText, show: !isTech },
+    { href: '/messages', label: 'Messages', icon: MessageSquare, show: !isTech, badge: unreadCount },
+  ]
 
   async function handleSignOut() {
     const supabase = createClient()
@@ -41,7 +46,7 @@ function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
         <span className="font-bold text-lg">Rope Access PM</span>
       </div>
       <nav className="flex-1 space-y-1 p-3 overflow-y-auto">
-        {nav.map(({ href, label, icon: Icon }) => (
+        {nav.filter(n => n.show).map(({ href, label, icon: Icon, badge }) => (
           <Link
             key={href}
             href={href}
@@ -53,8 +58,13 @@ function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
                 : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
             )}
           >
-            <Icon className="h-4 w-4" />
-            {label}
+            <Icon className="h-4 w-4 shrink-0" />
+            <span className="flex-1">{label}</span>
+            {badge ? (
+              <span className="rounded-full bg-red-500 px-1.5 py-0.5 text-xs font-bold text-white leading-none">
+                {badge}
+              </span>
+            ) : null}
           </Link>
         ))}
       </nav>
@@ -71,14 +81,14 @@ function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
   )
 }
 
-export function Sidebar() {
+export function Sidebar({ unreadCount = 0 }: { unreadCount?: number }) {
   const [open, setOpen] = useState(false)
 
   return (
     <>
-      {/* Desktop sidebar — always visible on md+ */}
+      {/* Desktop sidebar */}
       <aside className="hidden md:flex h-screen w-60 flex-col border-r bg-white shrink-0">
-        <SidebarContent />
+        <SidebarContent unreadCount={unreadCount} />
       </aside>
 
       {/* Mobile top bar */}
@@ -93,12 +103,9 @@ export function Sidebar() {
         <span className="font-bold text-base">Rope Access PM</span>
       </div>
 
-      {/* Mobile drawer backdrop */}
+      {/* Mobile backdrop */}
       {open && (
-        <div
-          className="md:hidden fixed inset-0 z-40 bg-black/40"
-          onClick={() => setOpen(false)}
-        />
+        <div className="md:hidden fixed inset-0 z-40 bg-black/40" onClick={() => setOpen(false)} />
       )}
 
       {/* Mobile drawer */}
@@ -115,7 +122,7 @@ export function Sidebar() {
         >
           <X className="h-5 w-5" />
         </button>
-        <SidebarContent onNavigate={() => setOpen(false)} />
+        <SidebarContent onNavigate={() => setOpen(false)} unreadCount={unreadCount} />
       </aside>
     </>
   )
