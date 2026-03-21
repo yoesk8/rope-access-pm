@@ -3,12 +3,35 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { FolderKanban, Users, Clock, FileText, MessageSquare, HardHat, CheckCircle2 } from 'lucide-react'
 import Link from 'next/link'
 
+const roleLabels: Record<string, { label: string; color: string }> = {
+  owner: { label: 'Account Owner', color: 'bg-purple-100 text-purple-700' },
+  lead_tech: { label: 'Lead Technician', color: 'bg-blue-100 text-blue-700' },
+  technician: { label: 'Technician', color: 'bg-gray-100 text-gray-600' },
+}
+
 export default async function DashboardPage() {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
   const { data: profile } = await supabase.from('profiles').select('role, plan, full_name').eq('id', user!.id).single()
   const role = profile?.role
   const plan = profile?.plan ?? 'basic'
+  const roleInfo = role ? roleLabels[role] : null
+
+  const WelcomeHeader = ({ title }: { title: string }) => (
+    <div>
+      <div className="flex items-center gap-2 mb-1">
+        <h1 className="text-2xl font-bold text-gray-900">{title}</h1>
+        {roleInfo && (
+          <span className={`text-xs font-medium px-2.5 py-1 rounded-full ${roleInfo.color}`}>
+            {roleInfo.label}
+          </span>
+        )}
+      </div>
+      <p className="text-sm text-gray-500">
+        Welcome back{profile?.full_name ? `, ${profile.full_name}` : ''}.
+      </p>
+    </div>
+  )
 
   // ── TECHNICIAN ────────────────────────────────────────────────
   if (role === 'technician') {
@@ -21,10 +44,7 @@ export default async function DashboardPage() {
 
     return (
       <div className="space-y-8">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900">My Jobs</h1>
-          <p className="text-sm text-gray-500 mt-1">Welcome back{profile?.full_name ? `, ${profile.full_name}` : ''}.</p>
-        </div>
+        <WelcomeHeader title="My Jobs" />
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between pb-2">
@@ -79,10 +99,7 @@ export default async function DashboardPage() {
 
     return (
       <div className="space-y-8">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900">Dashboard</h1>
-          <p className="text-sm text-gray-500 mt-1">Welcome back{profile?.full_name ? `, ${profile.full_name}` : ''}.</p>
-        </div>
+        <WelcomeHeader title="Dashboard" />
 
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
           <Card>
@@ -163,7 +180,7 @@ export default async function DashboardPage() {
 
   return (
     <div className="space-y-8">
-      <h1 className="text-2xl font-bold text-gray-900">Dashboard</h1>
+      <WelcomeHeader title="Dashboard" />
 
       <div className={`grid grid-cols-1 gap-4 sm:grid-cols-2 ${stats.length === 5 ? 'lg:grid-cols-5' : 'lg:grid-cols-4'}`}>
         {stats.map(({ label, value, icon: Icon, color }) => (

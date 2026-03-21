@@ -316,7 +316,7 @@ export default async function ProjectDetailPage({
         <div className="space-y-4">
           <div className="flex items-center justify-between">
             <h2 className="text-lg font-semibold text-gray-900">Team ({members?.length ?? 0})</h2>
-            {(canManage || isLeadTech) && (
+            {isOwner && (
               <ManageTeamDialog
                 projectId={id}
                 allProfiles={(allProfiles ?? []) as Profile[]}
