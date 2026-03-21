@@ -1,13 +1,11 @@
 import { createClient } from '@/lib/supabase/server'
 import { notFound } from 'next/navigation'
-import Link from 'next/link'
-import { buttonVariants } from '@/components/ui/button-variants'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 
-import { MapPin, Building2, CalendarDays, Clock, FileText, ArrowUpFromLine, Anchor, AlertTriangle, Phone, Wrench, Tag } from 'lucide-react'
-import { cn } from '@/lib/utils'
+import { MapPin, Building2, CalendarDays, ArrowUpFromLine, Anchor, AlertTriangle, Phone, Wrench, Tag } from 'lucide-react'
 import type { ProjectStatus, Profile } from '@/types'
 import { ManageTeamDialog } from './manage-team-dialog'
+import { OverviewTasksCard } from './overview-tasks-card'
 import { ContactManagerDialog } from '@/components/contact-manager-dialog'
 import { MarkCompleteButton } from './mark-complete-button'
 import { TasksTab } from './tasks-tab'
@@ -188,73 +186,16 @@ export default async function ProjectDetailPage({
               </CardContent>
             </Card>
 
-            <Card>
-              <CardHeader className="flex flex-row items-center justify-between">
-                <CardTitle className="flex items-center gap-2">
-                  <Clock className="h-4 w-4" /> Recent Timesheets
-                </CardTitle>
-                <Link href="/timesheets" className={cn(buttonVariants({ variant: 'outline', size: 'sm' }))}>
-                  View all
-                </Link>
-              </CardHeader>
-              <CardContent>
-                {timesheets && timesheets.length > 0 ? (
-                  <div className="space-y-2">
-                    {timesheets.map(t => (
-                      <div key={t.id} className="flex items-center justify-between text-sm py-1.5 border-b last:border-0">
-                        <div>
-                          <span className="font-medium">{(t.profile as any)?.full_name ?? 'Unknown'}</span>
-                          <span className="text-gray-400 mx-2">·</span>
-                          <span className="text-gray-500">{t.date}</span>
-                        </div>
-                        <div className="flex items-center gap-3">
-                          <span>{t.hours}h</span>
-                          <span className={`text-xs px-1.5 py-0.5 rounded-full ${
-                            t.status === 'approved' ? 'bg-green-100 text-green-700' :
-                            t.status === 'rejected' ? 'bg-red-100 text-red-700' :
-                            'bg-yellow-100 text-yellow-700'
-                          }`}>{t.status}</span>
-                        </div>
-                      </div>
-                    ))}
-                    <p className="text-sm text-gray-500 pt-2">Total logged: <strong>{totalHours}h</strong></p>
-                  </div>
-                ) : (
-                  <p className="text-sm text-gray-500">No timesheets logged yet.</p>
-                )}
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardHeader className="flex flex-row items-center justify-between">
-                <CardTitle className="flex items-center gap-2">
-                  <FileText className="h-4 w-4" /> Documents
-                </CardTitle>
-                <Link href="/documents" className={cn(buttonVariants({ variant: 'outline', size: 'sm' }))}>
-                  View all
-                </Link>
-              </CardHeader>
-              <CardContent>
-                {documents && documents.length > 0 ? (
-                  <div className="space-y-2">
-                    {documents.map(doc => (
-                      <div key={doc.id} className="flex items-center justify-between text-sm py-1.5 border-b last:border-0">
-                        <span className="font-medium">{doc.name}</span>
-                        <span className="text-xs text-gray-500 capitalize">{doc.type.replace('_', ' ')}</span>
-                      </div>
-                    ))}
-                  </div>
-                ) : (
-                  <p className="text-sm text-gray-500">No documents uploaded yet.</p>
-                )}
-              </CardContent>
-            </Card>
+            <OverviewTasksCard
+              projectId={id}
+              initialTasks={(tasks ?? []) as any}
+            />
           </div>
 
-          <div>
+          <div className="space-y-6">
             <Card>
-              <CardHeader className="flex flex-row items-center justify-between">
-                <CardTitle>Team ({members?.length ?? 0})</CardTitle>
+              <CardHeader className="flex flex-row items-center justify-between pb-3">
+                <CardTitle className="text-base">Team on this job</CardTitle>
                 {isOwner && (
                   <ManageTeamDialog
                     projectId={id}
@@ -265,15 +206,27 @@ export default async function ProjectDetailPage({
               </CardHeader>
               <CardContent>
                 {members && members.length > 0 ? (
-                  <div className="space-y-2">
-                    {members.map(m => (
-                      <div key={m.id} className="flex items-center gap-2 text-sm">
-                        <div className="h-7 w-7 rounded-full bg-gray-200 flex items-center justify-center text-xs font-medium text-gray-600">
-                          {((m.profile as any)?.full_name ?? '?')[0]?.toUpperCase()}
+                  <div className="space-y-3">
+                    {members.map(m => {
+                      const memberRole = (m.profile as any)?.role
+                      return (
+                        <div key={m.id} className="flex items-center justify-between gap-2">
+                          <div className="flex items-center gap-2.5">
+                            <div className="h-9 w-9 rounded-full bg-gray-100 flex items-center justify-center text-sm font-semibold text-gray-600 shrink-0">
+                              {((m.profile as any)?.full_name ?? '?')[0]?.toUpperCase()}
+                            </div>
+                            <span className="text-sm font-medium text-gray-900">{(m.profile as any)?.full_name ?? 'Unknown'}</span>
+                          </div>
+                          {memberRole && memberRole !== 'owner' && (
+                            <span className={`text-xs font-medium px-2.5 py-1 rounded-full shrink-0 ${
+                              memberRole === 'lead_tech' ? 'bg-blue-100 text-blue-700' : 'bg-gray-100 text-gray-600'
+                            }`}>
+                              {memberRole === 'lead_tech' ? 'Lead Tech' : 'Technician'}
+                            </span>
+                          )}
                         </div>
-                        <span>{(m.profile as any)?.full_name ?? 'Unknown'}</span>
-                      </div>
-                    ))}
+                      )
+                    })}
                   </div>
                 ) : (
                   <p className="text-sm text-gray-500">No members assigned.</p>
