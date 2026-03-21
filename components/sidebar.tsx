@@ -11,7 +11,6 @@ import {
   FolderKanban,
   Users,
   Clock,
-  FileText,
   LogOut,
   Menu,
   X,
@@ -32,7 +31,6 @@ function SidebarContent({ onNavigate, unreadCount }: { onNavigate?: () => void; 
     { href: '/projects', label: isOwner ? 'Jobs' : 'My Jobs', icon: FolderKanban, show: true },
     { href: '/team', label: 'Team', icon: Users, show: isOwner },
     { href: '/timesheets', label: 'Timesheets', icon: Clock, show: isOwner || isLeadTech },
-    { href: '/documents', label: 'Documents', icon: FileText, show: isOwner },
     {
       href: '/messages',
       label: 'Messages',

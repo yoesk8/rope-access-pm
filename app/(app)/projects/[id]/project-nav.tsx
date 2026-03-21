@@ -35,11 +35,20 @@ const ownerTabs = [
 
 const leadTechTabs = [
   { key: 'overview', label: 'Overview', icon: LayoutGrid },
-  { key: 'documents', label: 'Reports', icon: FileText },
+  { key: 'tasks', label: 'Tasks', icon: CheckSquare },
+  { key: 'photos', label: 'Photos', icon: Camera },
+  { key: 'checklists', label: 'Checklists', icon: ClipboardList },
+  { key: 'logs', label: 'Daily Logs', icon: BookOpen },
+  { key: 'documents', label: 'Documents', icon: FileText },
 ]
 
 const techTabs = [
   { key: 'overview', label: 'Overview', icon: LayoutGrid },
+  { key: 'tasks', label: 'Tasks', icon: CheckSquare },
+  { key: 'photos', label: 'Photos', icon: Camera },
+  { key: 'checklists', label: 'Checklists', icon: ClipboardList },
+  { key: 'logs', label: 'Daily Logs', icon: BookOpen },
+  { key: 'documents', label: 'Documents', icon: FileText },
 ]
 
 interface Props {
