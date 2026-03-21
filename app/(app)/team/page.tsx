@@ -48,7 +48,7 @@ export default async function TeamPage() {
   const plan = (ownerProfile.plan ?? 'basic') as Plan
 
   const [{ data: members }, { data: teams }] = await Promise.all([
-    supabase.from('profiles').select('*').neq('role', 'owner').order('full_name', { ascending: true }),
+    supabase.from('profiles').select('*').neq('role', 'owner').neq('id', user!.id).order('full_name', { ascending: true }),
     supabase.from('teams').select('*, lead:profiles!teams_lead_tech_id_fkey(id, full_name), team_members(user_id, profile:profiles(id, full_name, role))').order('name'),
   ])
 
