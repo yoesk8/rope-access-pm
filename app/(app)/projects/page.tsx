@@ -13,6 +13,15 @@ const statusColors: Record<ProjectStatus, string> = {
   cancelled: 'bg-red-100 text-red-700',
 }
 
+const statusOrder: ProjectStatus[] = ['active', 'draft', 'completed', 'cancelled']
+
+const statusHeadings: Record<ProjectStatus, string> = {
+  active: 'Active',
+  draft: 'Draft',
+  completed: 'Completed',
+  cancelled: 'Cancelled',
+}
+
 export default async function ProjectsPage() {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
@@ -37,45 +46,58 @@ export default async function ProjectsPage() {
       </div>
 
       {projects && projects.length > 0 ? (
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {projects.map(project => (
-            <Link key={project.id} href={`/projects/${project.id}`}>
-              <Card className="hover:shadow-md transition-shadow cursor-pointer h-full">
-                <CardContent className="p-5 space-y-3">
-                  <div className="flex items-start justify-between gap-2">
-                    <h2 className="font-semibold text-gray-900 leading-snug">{project.name}</h2>
-                    <span className={`text-xs font-medium px-2 py-0.5 rounded-full shrink-0 ${statusColors[project.status as ProjectStatus]}`}>
-                      {project.status}
-                    </span>
-                  </div>
-                  {(project as any).job_category && (
-                    <div className="flex items-center gap-1.5 text-xs text-gray-400">
-                      <Tag className="h-3 w-3" />
-                      {(project as any).job_category.replace(/_/g, ' ').replace(/\b\w/g, (c: string) => c.toUpperCase())}
-                    </div>
-                  )}
-                  {project.client && (
-                    <div className="flex items-center gap-1.5 text-sm text-gray-500">
-                      <Building2 className="h-3.5 w-3.5" />
-                      {project.client}
-                    </div>
-                  )}
-                  {project.location && (
-                    <div className="flex items-center gap-1.5 text-sm text-gray-500">
-                      <MapPin className="h-3.5 w-3.5" />
-                      {project.location}
-                    </div>
-                  )}
-                  {(project.start_date || project.end_date) && (
-                    <div className="flex items-center gap-1.5 text-sm text-gray-500">
-                      <CalendarDays className="h-3.5 w-3.5" />
-                      {project.start_date ?? '—'} → {project.end_date ?? '—'}
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
-            </Link>
-          ))}
+        <div className="space-y-8">
+          {statusOrder.map(status => {
+            const group = projects.filter(p => p.status === status)
+            if (group.length === 0) return null
+            return (
+              <div key={status}>
+                <h2 className="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-3">
+                  {statusHeadings[status]} <span className="text-gray-400 font-normal normal-case tracking-normal">({group.length})</span>
+                </h2>
+                <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                  {group.map(project => (
+                    <Link key={project.id} href={`/projects/${project.id}`}>
+                      <Card className="hover:shadow-md transition-shadow cursor-pointer h-full">
+                        <CardContent className="p-5 space-y-3">
+                          <div className="flex items-start justify-between gap-2">
+                            <h2 className="font-semibold text-gray-900 leading-snug">{project.name}</h2>
+                            <span className={`text-xs font-medium px-2 py-0.5 rounded-full shrink-0 ${statusColors[status]}`}>
+                              {status}
+                            </span>
+                          </div>
+                          {(project as any).job_category && (
+                            <div className="flex items-center gap-1.5 text-xs text-gray-400">
+                              <Tag className="h-3 w-3" />
+                              {(project as any).job_category.replace(/_/g, ' ').replace(/\b\w/g, (c: string) => c.toUpperCase())}
+                            </div>
+                          )}
+                          {project.client && (
+                            <div className="flex items-center gap-1.5 text-sm text-gray-500">
+                              <Building2 className="h-3.5 w-3.5" />
+                              {project.client}
+                            </div>
+                          )}
+                          {project.location && (
+                            <div className="flex items-center gap-1.5 text-sm text-gray-500">
+                              <MapPin className="h-3.5 w-3.5" />
+                              {project.location}
+                            </div>
+                          )}
+                          {(project.start_date || project.end_date) && (
+                            <div className="flex items-center gap-1.5 text-sm text-gray-500">
+                              <CalendarDays className="h-3.5 w-3.5" />
+                              {project.start_date ?? '—'} → {project.end_date ?? '—'}
+                            </div>
+                          )}
+                        </CardContent>
+                      </Card>
+                    </Link>
+                  ))}
+                </div>
+              </div>
+            )
+          })}
         </div>
       ) : (
         <Card>
