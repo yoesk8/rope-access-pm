@@ -64,11 +64,11 @@ export default async function ProjectDetailPage({
   const currentRole = currentProfile?.role
   const isTech = currentRole === 'technician'
   const isLeadTech = currentRole === 'lead_tech'
-  const canManage = currentRole === 'admin' || currentRole === 'manager'
-  const canComplete = canManage || isLeadTech
+  const isOwner = currentRole === 'owner'
+  const canComplete = isOwner || isLeadTech
 
-  // Find a manager/admin to contact
-  const manager = (allProfiles ?? []).find(p => p.role === 'admin' || p.role === 'manager')
+  // Find owner to contact (for lead_tech messaging)
+  const manager = (allProfiles ?? []).find(p => p.role === 'owner')
 
   const totalHours = timesheets?.reduce((sum, t) => sum + (t.hours ?? 0), 0) ?? 0
   const memberProfiles = (members ?? []).map(m => ({ id: m.id, user_id: m.user_id, profile: m.profile as Profile }))
@@ -255,7 +255,7 @@ export default async function ProjectDetailPage({
             <Card>
               <CardHeader className="flex flex-row items-center justify-between">
                 <CardTitle>Team ({members?.length ?? 0})</CardTitle>
-                {(canManage || isLeadTech) && (
+                {isOwner && (
                   <ManageTeamDialog
                     projectId={id}
                     allProfiles={(allProfiles ?? []) as Profile[]}
@@ -309,10 +309,10 @@ export default async function ProjectDetailPage({
       )}
 
       {tab === 'documents' && (
-        <DocumentsTab projectId={id} documents={(documents ?? []) as any} canUpload={!isTech} />
+        <DocumentsTab projectId={id} documents={(documents ?? []) as any} canUpload={isOwner || isLeadTech} />
       )}
 
-      {tab === 'team' && !isTech && (
+      {tab === 'team' && isOwner && (
         <div className="space-y-4">
           <div className="flex items-center justify-between">
             <h2 className="text-lg font-semibold text-gray-900">Team ({members?.length ?? 0})</h2>

@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog'
 import { UserPlus, Copy, Check } from 'lucide-react'
 import { inviteMember } from './invite-action'
+import type { Plan } from '@/types'
 
 const inputCls = 'w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-gray-900'
 
@@ -12,13 +13,17 @@ function generatePassword() {
   return Array.from({ length: 10 }, () => chars[Math.floor(Math.random() * chars.length)]).join('')
 }
 
-export function InviteDialog() {
+export function InviteDialog({ plan, memberCount }: { plan: Plan; memberCount: number }) {
   const [open, setOpen] = useState(false)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [created, setCreated] = useState<{ email: string; password: string } | null>(null)
   const [copied, setCopied] = useState(false)
   const [password] = useState(generatePassword)
+
+  const isBasic = plan === 'basic'
+  const atLimit = isBasic && memberCount >= 3
+  const canAddLeadTech = !isBasic
 
   function handleOpenChange(val: boolean) {
     setOpen(val)
@@ -51,7 +56,11 @@ export function InviteDialog() {
 
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
-      <DialogTrigger className="inline-flex items-center gap-2 rounded-lg bg-gray-900 px-3 py-2 text-sm font-medium text-white hover:bg-gray-700 transition-colors">
+      <DialogTrigger
+        disabled={atLimit}
+        title={atLimit ? 'Upgrade your plan to add more team members' : undefined}
+        className="inline-flex items-center gap-2 rounded-lg bg-gray-900 px-3 py-2 text-sm font-medium text-white hover:bg-gray-700 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+      >
         <UserPlus className="h-4 w-4" /> Add Member
       </DialogTrigger>
       <DialogContent className="max-w-sm">
@@ -101,9 +110,11 @@ export function InviteDialog() {
               <label className="text-sm font-medium text-gray-700">Role</label>
               <select name="role" required className={inputCls}>
                 <option value="technician">Technician</option>
-                <option value="lead_tech">Lead Technician</option>
-                <option value="manager">Manager</option>
+                {canAddLeadTech && <option value="lead_tech">Lead Technician</option>}
               </select>
+              {!canAddLeadTech && (
+                <p className="text-xs text-orange-600">Lead Technician requires a Field plan or higher.</p>
+              )}
             </div>
             <div className="space-y-1.5">
               <label className="text-sm font-medium text-gray-700">Temporary Password</label>

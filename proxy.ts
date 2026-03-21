@@ -39,23 +39,30 @@ export async function proxy(request: NextRequest) {
     return NextResponse.redirect(new URL('/dashboard', request.url))
   }
 
-  // Block restricted routes based on role
+  // Role-based route protection
   if (user) {
-    // technicians: blocked from /team, /documents, /messages
-    // lead_tech: blocked from /team, /messages (but CAN access /documents)
-    const allRestrictedPaths = ['/team', '/documents', '/messages']
-    const isRestricted = allRestrictedPaths.some(p => pathname === p || pathname.startsWith(p + '/'))
-    if (isRestricted) {
-      const { data: profile } = await supabase.from('profiles').select('role').eq('id', user.id).single()
-      if (profile?.role === 'technician') {
+    const { data: profile } = await supabase.from('profiles').select('role, plan').eq('id', user.id).single()
+    const role = profile?.role
+    const plan = profile?.plan ?? 'basic'
+
+    // Technicians: only /dashboard and /projects routes
+    if (role === 'technician') {
+      const allowed = ['/dashboard', '/projects']
+      const isAllowed = allowed.some(p => pathname === p || pathname.startsWith(p + '/'))
+      if (!isAllowed) return NextResponse.redirect(new URL('/dashboard', request.url))
+    }
+
+    // Lead techs: /dashboard, /projects, /messages
+    if (role === 'lead_tech') {
+      const blocked = ['/team', '/documents', '/timesheets']
+      const isBlocked = blocked.some(p => pathname === p || pathname.startsWith(p + '/'))
+      if (isBlocked) return NextResponse.redirect(new URL('/dashboard', request.url))
+    }
+
+    // Owner on basic plan: no /messages route
+    if (role === 'owner' && plan === 'basic') {
+      if (pathname === '/messages' || pathname.startsWith('/messages/')) {
         return NextResponse.redirect(new URL('/dashboard', request.url))
-      }
-      // lead_tech can access /documents but not /team or /messages
-      if (profile?.role === 'lead_tech') {
-        const leadTechRestricted = ['/team', '/messages']
-        if (leadTechRestricted.some(p => pathname === p || pathname.startsWith(p + '/'))) {
-          return NextResponse.redirect(new URL('/dashboard', request.url))
-        }
       }
     }
   }

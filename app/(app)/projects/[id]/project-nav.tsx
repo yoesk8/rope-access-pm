@@ -2,7 +2,6 @@
 
 import Link from 'next/link'
 import { useSearchParams } from 'next/navigation'
-import { useRouter } from 'next/navigation'
 import {
   LayoutGrid,
   CheckSquare,
@@ -12,10 +11,9 @@ import {
   FileText,
   Users,
   ArrowLeft,
-  Circle,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
-import type { ProjectStatus } from '@/types'
+import type { ProjectStatus, Role } from '@/types'
 
 const statusColors: Record<ProjectStatus, string> = {
   draft: 'bg-yellow-400',
@@ -24,29 +22,41 @@ const statusColors: Record<ProjectStatus, string> = {
   cancelled: 'bg-red-400',
 }
 
-const fieldManagement = [
+// Tabs visible per role
+const ownerTabs = [
+  { key: 'overview', label: 'Overview', icon: LayoutGrid },
   { key: 'tasks', label: 'Tasks', icon: CheckSquare },
   { key: 'photos', label: 'Photos', icon: Camera },
   { key: 'checklists', label: 'Checklists', icon: ClipboardList },
   { key: 'logs', label: 'Daily Logs', icon: BookOpen },
   { key: 'documents', label: 'Documents', icon: FileText },
+  { key: 'team', label: 'Team', icon: Users },
 ]
 
-const projectManagement = [
+const leadTechTabs = [
   { key: 'overview', label: 'Overview', icon: LayoutGrid },
-  { key: 'team', label: 'Team', icon: Users },
+  { key: 'documents', label: 'Reports', icon: FileText },
+]
+
+const techTabs = [
+  { key: 'overview', label: 'Overview', icon: LayoutGrid },
 ]
 
 interface Props {
   projectId: string
   projectName: string
   projectStatus: ProjectStatus
-  isTech: boolean
+  role: Role
 }
 
-export function ProjectNav({ projectId, projectName, projectStatus, isTech }: Props) {
+export function ProjectNav({ projectId, projectName, projectStatus, role }: Props) {
   const searchParams = useSearchParams()
   const active = searchParams.get('tab') ?? 'overview'
+
+  const tabs =
+    role === 'owner' ? ownerTabs :
+    role === 'lead_tech' ? leadTechTabs :
+    techTabs
 
   function NavItem({ item }: { item: { key: string; label: string; icon: React.ElementType } }) {
     const Icon = item.icon
@@ -67,74 +77,49 @@ export function ProjectNav({ projectId, projectName, projectStatus, isTech }: Pr
     )
   }
 
-  // Desktop: vertical dark sidebar
-  const sidebar = (
-    <aside className="hidden md:flex w-52 shrink-0 flex-col bg-gray-900 min-h-0">
-      {/* Back + project info */}
-      <div className="p-4 border-b border-white/10">
-        <Link
-          href="/projects"
-          className="flex items-center gap-1.5 text-xs text-gray-400 hover:text-white transition-colors mb-3"
-        >
-          <ArrowLeft className="h-3.5 w-3.5" /> All Jobs
-        </Link>
-        <div className="flex items-start gap-2">
-          <span className={cn('mt-1.5 h-2 w-2 rounded-full shrink-0', statusColors[projectStatus])} />
-          <p className="text-sm font-semibold text-white leading-snug">{projectName}</p>
-        </div>
-      </div>
-
-      {/* Field Management */}
-      <nav className="flex-1 overflow-y-auto p-3 space-y-4">
-        <div>
-          <p className="px-3 text-[10px] font-semibold uppercase tracking-widest text-gray-500 mb-1">
-            Field Management
-          </p>
-          <div className="space-y-0.5">
-            {fieldManagement.map(item => <NavItem key={item.key} item={item} />)}
-          </div>
-        </div>
-        <div>
-          <p className="px-3 text-[10px] font-semibold uppercase tracking-widest text-gray-500 mb-1">
-            Project Management
-          </p>
-          <div className="space-y-0.5">
-            {(!isTech ? projectManagement : projectManagement.filter(i => i.key === 'overview')).map(item => (
-              <NavItem key={item.key} item={item} />
-            ))}
-          </div>
-        </div>
-      </nav>
-    </aside>
-  )
-
-  // Mobile: horizontal scrolling tabs
-  const mobileTabs = (
-    <div className="md:hidden flex gap-1 bg-gray-900 overflow-x-auto px-3 py-2 -mx-4 -mt-4 mb-4">
-      {[...fieldManagement, ...(!isTech ? projectManagement : [projectManagement[0]])].map(item => {
-        const Icon = item.icon
-        const isActive = active === item.key
-        return (
-          <Link
-            key={item.key}
-            href={`/projects/${projectId}?tab=${item.key}`}
-            className={cn(
-              'flex items-center gap-1.5 px-3 py-1.5 rounded text-xs font-medium whitespace-nowrap transition-colors',
-              isActive ? 'bg-white/15 text-white' : 'text-gray-400 hover:text-white'
-            )}
-          >
-            <Icon className="h-3.5 w-3.5" />
-            {item.label}
-          </Link>
-        )
-      })}
-    </div>
-  )
-
   return (
     <>
-      {sidebar}
-      {mobileTabs}
+      {/* Desktop: vertical dark sidebar */}
+      <aside className="hidden md:flex w-52 shrink-0 flex-col bg-gray-900 min-h-0">
+        <div className="p-4 border-b border-white/10">
+          <Link
+            href="/projects"
+            className="flex items-center gap-1.5 text-xs text-gray-400 hover:text-white transition-colors mb-3"
+          >
+            <ArrowLeft className="h-3.5 w-3.5" /> All Jobs
+          </Link>
+          <div className="flex items-start gap-2">
+            <span className={cn('mt-1.5 h-2 w-2 rounded-full shrink-0', statusColors[projectStatus])} />
+            <p className="text-sm font-semibold text-white leading-snug">{projectName}</p>
+          </div>
+        </div>
+        <nav className="flex-1 overflow-y-auto p-3">
+          <div className="space-y-0.5">
+            {tabs.map(item => <NavItem key={item.key} item={item} />)}
+          </div>
+        </nav>
+      </aside>
+
+      {/* Mobile: horizontal scrolling tab bar */}
+      <div className="md:hidden flex gap-1 bg-gray-900 overflow-x-auto px-3 py-2 -mx-4 -mt-4 mb-4">
+        {tabs.map(item => {
+          const Icon = item.icon
+          const isActive = active === item.key
+          return (
+            <Link
+              key={item.key}
+              href={`/projects/${projectId}?tab=${item.key}`}
+              className={cn(
+                'flex items-center gap-1.5 px-3 py-1.5 rounded text-xs font-medium whitespace-nowrap transition-colors',
+                isActive ? 'bg-white/15 text-white' : 'text-gray-400 hover:text-white'
+              )}
+            >
+              <Icon className="h-3.5 w-3.5" />
+              {item.label}
+            </Link>
+          )
+        })}
+      </div>
     </>
   )
 }

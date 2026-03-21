@@ -1,106 +1,148 @@
 import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 import { Card, CardContent } from '@/components/ui/card'
-import { Phone, Trash2, Users } from 'lucide-react'
+import { Phone, Users, Crown, Shield, HardHat } from 'lucide-react'
 import { InviteDialog } from './invite-dialog'
 import { DeleteMemberButton } from './delete-member-button'
 import { CreateTeamDialog } from './create-team-dialog'
 import { DeleteTeamButton } from './delete-team-button'
-import type { Role } from '@/types'
+import type { Role, Plan } from '@/types'
 
 const roleColors: Record<Role, string> = {
-  admin: 'bg-purple-100 text-purple-700',
-  manager: 'bg-blue-100 text-blue-700',
+  owner: 'bg-purple-100 text-purple-700',
   lead_tech: 'bg-orange-100 text-orange-700',
   technician: 'bg-gray-100 text-gray-600',
 }
 
 const roleLabels: Record<Role, string> = {
-  admin: 'Admin',
-  manager: 'Manager',
+  owner: 'Account Owner',
   lead_tech: 'Lead Tech',
   technician: 'Technician',
+}
+
+const roleIcons: Record<Role, React.ElementType> = {
+  owner: Crown,
+  lead_tech: Shield,
+  technician: HardHat,
+}
+
+const planLabels: Record<Plan, string> = {
+  basic: 'Basic (Free)',
+  field: 'Field',
+  operations: 'Operations',
+}
+
+const planColors: Record<Plan, string> = {
+  basic: 'bg-gray-100 text-gray-600',
+  field: 'bg-blue-100 text-blue-700',
+  operations: 'bg-purple-100 text-purple-700',
 }
 
 export default async function TeamPage() {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
-  const { data: profile } = await supabase.from('profiles').select('role').eq('id', user!.id).single()
+  const { data: ownerProfile } = await supabase.from('profiles').select('role, plan').eq('id', user!.id).single()
 
-  if (profile?.role === 'technician' || profile?.role === 'lead_tech') redirect('/dashboard')
+  if (ownerProfile?.role !== 'owner') redirect('/dashboard')
 
-  const canInvite = profile?.role === 'admin' || profile?.role === 'manager'
+  const plan = (ownerProfile.plan ?? 'basic') as Plan
 
   const [{ data: members }, { data: teams }] = await Promise.all([
     supabase.from('profiles').select('*').order('full_name', { ascending: true }),
     supabase.from('teams').select('*, lead:profiles!teams_lead_tech_id_fkey(id, full_name), team_members(user_id, profile:profiles(id, full_name, role))').order('name'),
   ])
 
+  const nonOwnerCount = (members ?? []).filter(m => m.role !== 'owner').length
   const leadTechs = (members ?? []).filter(m => m.role === 'lead_tech')
   const technicians = (members ?? []).filter(m => m.role === 'technician')
+
+  const planLimit = plan === 'basic' ? 3 : null
 
   return (
     <div className="space-y-10">
       {/* Members section */}
       <div className="space-y-6">
-        <div className="flex items-center justify-between">
-          <h1 className="text-2xl font-bold text-gray-900">Team</h1>
-          {canInvite && <InviteDialog />}
+        <div className="flex items-center justify-between gap-4 flex-wrap">
+          <div>
+            <h1 className="text-2xl font-bold text-gray-900">Team</h1>
+            <div className="flex items-center gap-2 mt-1">
+              <span className={`text-xs font-medium px-2 py-0.5 rounded-full ${planColors[plan]}`}>
+                {planLabels[plan]}
+              </span>
+              {planLimit && (
+                <span className="text-xs text-gray-400">
+                  {nonOwnerCount}/{planLimit} members used
+                </span>
+              )}
+            </div>
+          </div>
+          <InviteDialog plan={plan} memberCount={nonOwnerCount} />
         </div>
+
+        {plan === 'basic' && (
+          <div className="rounded-xl border border-orange-200 bg-orange-50 px-4 py-3 text-sm text-orange-700">
+            <strong>Basic plan:</strong> Up to 3 technicians, no Lead Tech role, no messaging.{' '}
+            <a href="/pricing" className="underline font-medium">Upgrade</a> to unlock full features.
+          </div>
+        )}
 
         {members && members.length > 0 ? (
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            {members.map(member => (
-              <Card key={member.id} className="group">
-                <CardContent className="p-5">
-                  <div className="flex items-start gap-4">
-                    <div className="h-10 w-10 rounded-full bg-gray-200 flex items-center justify-center text-sm font-semibold text-gray-600 shrink-0">
-                      {(member.full_name ?? '?')[0]?.toUpperCase()}
-                    </div>
-                    <div className="min-w-0 flex-1">
-                      <div className="flex items-center justify-between gap-2">
-                        <p className="font-semibold text-gray-900 truncate">{member.full_name ?? 'Unnamed'}</p>
-                        <span className={`text-xs font-medium px-2 py-0.5 rounded-full shrink-0 ${roleColors[member.role as Role]}`}>
-                          {roleLabels[member.role as Role] ?? member.role}
-                        </span>
+            {members.map(member => {
+              const role = member.role as Role
+              const RoleIcon = roleIcons[role] ?? HardHat
+              return (
+                <Card key={member.id} className="group">
+                  <CardContent className="p-5">
+                    <div className="flex items-start gap-3">
+                      <div className="h-10 w-10 rounded-full bg-gray-100 flex items-center justify-center text-sm font-semibold text-gray-600 shrink-0">
+                        {(member.full_name ?? '?')[0]?.toUpperCase()}
                       </div>
-                      {member.phone && (
-                        <div className="flex items-center gap-1.5 mt-1 text-sm text-gray-500">
-                          <Phone className="h-3.5 w-3.5" />
-                          {member.phone}
+                      <div className="min-w-0 flex-1">
+                        <div className="flex items-center justify-between gap-2 flex-wrap">
+                          <p className="font-semibold text-gray-900 truncate">{member.full_name ?? 'Unnamed'}</p>
+                          <span className={`text-xs font-medium px-2 py-0.5 rounded-full shrink-0 ${roleColors[role]}`}>
+                            {roleLabels[role] ?? role}
+                          </span>
                         </div>
-                      )}
-                      <p className="text-xs text-gray-400 mt-1">
-                        Joined {new Date(member.created_at).toLocaleDateString()}
-                      </p>
-                      {canInvite && member.id !== user!.id && (
-                        <div className="mt-2">
-                          <DeleteMemberButton userId={member.id} name={member.full_name ?? 'this member'} />
-                        </div>
-                      )}
+                        {member.phone && (
+                          <div className="flex items-center gap-1.5 mt-1 text-sm text-gray-500">
+                            <Phone className="h-3.5 w-3.5" />
+                            {member.phone}
+                          </div>
+                        )}
+                        <p className="text-xs text-gray-400 mt-1">
+                          Added {new Date(member.created_at).toLocaleDateString()}
+                        </p>
+                        {member.id !== user!.id && role !== 'owner' && (
+                          <div className="mt-2">
+                            <DeleteMemberButton userId={member.id} name={member.full_name ?? 'this member'} />
+                          </div>
+                        )}
+                      </div>
                     </div>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
+                  </CardContent>
+                </Card>
+              )
+            })}
           </div>
         ) : (
           <Card>
             <CardContent className="py-16 text-center">
-              <p className="text-gray-500 mb-4">No team members yet.</p>
-              {canInvite && <p className="text-sm text-gray-400">Use "Add Member" to add your first technician.</p>}
+              <p className="text-gray-500 mb-2">No team members yet.</p>
+              <p className="text-sm text-gray-400">Use "Add Member" to add your first technician.</p>
             </CardContent>
           </Card>
         )}
       </div>
 
-      {/* Teams section */}
-      {canInvite && (
+      {/* Teams section — operations plan only */}
+      {plan === 'operations' && (
         <div className="space-y-6">
           <div className="flex items-center justify-between">
             <div>
               <h2 className="text-xl font-bold text-gray-900">Teams</h2>
-              <p className="text-sm text-gray-500 mt-0.5">Group technicians under a lead — then assign the whole team to a job at once.</p>
+              <p className="text-sm text-gray-500 mt-0.5">Group technicians under a lead tech — assign the whole team to a job at once.</p>
             </div>
             <CreateTeamDialog leadTechs={leadTechs as any} technicians={technicians as any} />
           </div>
@@ -124,7 +166,7 @@ export default async function TeamPage() {
                       </div>
                       <DeleteTeamButton teamId={team.id} name={team.name} />
                     </div>
-                    {team.team_members && team.team_members.length > 0 ? (
+                    {team.team_members?.length > 0 ? (
                       <div className="space-y-1.5">
                         {team.team_members.map((tm: any) => (
                           <div key={tm.user_id} className="flex items-center gap-2 text-sm text-gray-600">
@@ -150,6 +192,13 @@ export default async function TeamPage() {
               </CardContent>
             </Card>
           )}
+        </div>
+      )}
+
+      {plan === 'field' && (
+        <div className="rounded-xl border border-blue-200 bg-blue-50 px-4 py-3 text-sm text-blue-700">
+          <strong>Teams management</strong> is available on the Operations plan.{' '}
+          <a href="/pricing" className="underline font-medium">Upgrade</a> to create teams and assign them to jobs.
         </div>
       )}
     </div>

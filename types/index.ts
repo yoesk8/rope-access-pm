@@ -1,4 +1,5 @@
-export type Role = 'admin' | 'manager' | 'lead_tech' | 'technician'
+export type Role = 'owner' | 'lead_tech' | 'technician'
+export type Plan = 'basic' | 'field' | 'operations'
 export type ProjectStatus = 'draft' | 'active' | 'completed' | 'cancelled'
 export type TimesheetStatus = 'pending' | 'approved' | 'rejected'
 export type DocumentType = 'risk_assessment' | 'method_statement' | 'inspection_report' | 'certificate' | 'other'
@@ -7,6 +8,7 @@ export interface Profile {
   id: string
   full_name: string | null
   role: Role
+  plan: Plan
   phone: string | null
   avatar_url: string | null
   created_at: string

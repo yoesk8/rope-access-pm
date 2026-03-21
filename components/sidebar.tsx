@@ -21,18 +21,26 @@ import {
 function SidebarContent({ onNavigate, unreadCount }: { onNavigate?: () => void; unreadCount: number }) {
   const pathname = usePathname()
   const router = useRouter()
-  const { role } = useUser()
-  const isTech = role === 'technician'
+  const { role, plan } = useUser()
+
+  const isOwner = role === 'owner'
   const isLeadTech = role === 'lead_tech'
-  const isManager = role === 'admin' || role === 'manager'
+  const isTech = role === 'technician'
 
   const nav = [
     { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard, show: true },
-    { href: '/projects', label: (isTech || isLeadTech) ? 'My Jobs' : 'Projects', icon: FolderKanban, show: true },
-    { href: '/team', label: 'Team', icon: Users, show: isManager },
-    { href: '/timesheets', label: 'Timesheets', icon: Clock, show: true },
-    { href: '/documents', label: 'Documents', icon: FileText, show: !isTech },
-    { href: '/messages', label: 'Messages', icon: MessageSquare, show: isManager, badge: unreadCount },
+    { href: '/projects', label: isOwner ? 'Jobs' : 'My Jobs', icon: FolderKanban, show: true },
+    { href: '/team', label: 'Team', icon: Users, show: isOwner },
+    { href: '/timesheets', label: 'Timesheets', icon: Clock, show: isOwner || isLeadTech },
+    { href: '/documents', label: 'Documents', icon: FileText, show: isOwner },
+    {
+      href: '/messages',
+      label: 'Messages',
+      icon: MessageSquare,
+      // Owner sees messages on field/operations plan; lead_tech always sees messages
+      show: (isOwner && plan !== 'basic') || isLeadTech,
+      badge: unreadCount,
+    },
   ]
 
   async function handleSignOut() {

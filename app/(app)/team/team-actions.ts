@@ -12,7 +12,7 @@ export async function createTeam(formData: FormData) {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
   const { data: profile } = await supabase.from('profiles').select('role').eq('id', user!.id).single()
-  if (!profile || !['admin', 'manager'].includes(profile.role)) return { error: 'Not authorised.' }
+  if (!profile || !['owner'].includes(profile.role)) return { error: 'Not authorised.' }
 
   const { data: team, error: teamError } = await supabase
     .from('teams')
@@ -34,7 +34,7 @@ export async function deleteTeam(teamId: string) {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
   const { data: profile } = await supabase.from('profiles').select('role').eq('id', user!.id).single()
-  if (!profile || !['admin', 'manager'].includes(profile.role)) return { error: 'Not authorised.' }
+  if (!profile || !['owner'].includes(profile.role)) return { error: 'Not authorised.' }
 
   const { error } = await supabase.from('teams').delete().eq('id', teamId)
   if (error) return { error: error.message }
