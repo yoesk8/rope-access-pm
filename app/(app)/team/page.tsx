@@ -52,9 +52,10 @@ export default async function TeamPage() {
     supabase.from('teams').select('*, lead:profiles!teams_lead_tech_id_fkey(id, full_name), team_members(user_id, profile:profiles(id, full_name, role))').order('name'),
   ])
 
-  const nonOwnerCount = (members ?? []).filter(m => m.role !== 'owner').length
-  const leadTechs = (members ?? []).filter(m => m.role === 'lead_tech')
-  const technicians = (members ?? []).filter(m => m.role === 'technician')
+  const nonOwners = (members ?? []).filter(m => m.role !== 'owner')
+  const nonOwnerCount = nonOwners.length
+  const leadTechs = nonOwners.filter(m => m.role === 'lead_tech')
+  const technicians = nonOwners.filter(m => m.role === 'technician')
 
   const planLimit = plan === 'basic' ? 3 : null
 
@@ -86,9 +87,9 @@ export default async function TeamPage() {
           </div>
         )}
 
-        {members && members.length > 0 ? (
+        {nonOwners.length > 0 ? (
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            {members.map(member => {
+            {nonOwners.map(member => {
               const role = member.role as Role
               const RoleIcon = roleIcons[role] ?? HardHat
               return (
