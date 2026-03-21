@@ -5,6 +5,8 @@ import { Card, CardContent } from '@/components/ui/card'
 import { Plus, MapPin, Building2, CalendarDays, Tag } from 'lucide-react'
 import type { ProjectStatus } from '@/types'
 import { cn } from '@/lib/utils'
+import { Suspense } from 'react'
+import { ProjectsFilterBar } from './projects-filter-bar'
 
 const statusColors: Record<ProjectStatus, string> = {
   draft: 'bg-yellow-100 text-yellow-700',
@@ -22,28 +24,42 @@ const statusHeadings: Record<ProjectStatus, string> = {
   cancelled: 'Cancelled',
 }
 
-export default async function ProjectsPage() {
+export default async function ProjectsPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ client?: string; category?: string }>
+}) {
+  const { client: clientFilter, category: categoryFilter } = await searchParams
+
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
   const { data: profile } = await supabase.from('profiles').select('role').eq('id', user!.id).single()
   const isTech = profile?.role === 'technician'
 
   // RLS already filters by membership for techs — just fetch all visible projects
-  const { data: projects } = await supabase
-    .from('projects')
-    .select('*')
-    .order('created_at', { ascending: false })
+  let query = supabase.from('projects').select('*').order('created_at', { ascending: false })
+  if (clientFilter) query = query.eq('client', clientFilter)
+  if (categoryFilter) query = query.eq('job_category', categoryFilter)
+  const { data: projects } = await query
+
+  // Unique clients for filter dropdown
+  const { data: allProjects } = await supabase.from('projects').select('client').not('client', 'is', null)
+  const clients = [...new Set((allProjects ?? []).map(p => p.client).filter(Boolean))] as string[]
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold text-gray-900">{isTech ? 'My Jobs' : 'Projects'}</h1>
+      <div className="flex items-center justify-between gap-4 flex-wrap">
+        <h1 className="text-2xl font-bold text-gray-900">{isTech ? 'My Jobs' : 'Jobs'}</h1>
         {!isTech && (
           <Link href="/projects/new" className={cn(buttonVariants())}>
             <Plus className="h-4 w-4 mr-2" />New Job
           </Link>
         )}
       </div>
+
+      <Suspense>
+        <ProjectsFilterBar clients={clients} />
+      </Suspense>
 
       {projects && projects.length > 0 ? (
         <div className="space-y-8">
@@ -102,8 +118,12 @@ export default async function ProjectsPage() {
       ) : (
         <Card>
           <CardContent className="py-16 text-center">
-            <p className="text-gray-500 mb-4">{isTech ? "You haven't been assigned to any jobs yet." : 'No projects yet.'}</p>
-            {!isTech && (
+            <p className="text-gray-500 mb-4">
+              {clientFilter || categoryFilter
+                ? 'No jobs match the selected filters.'
+                : isTech ? "You haven't been assigned to any jobs yet." : 'No jobs yet.'}
+            </p>
+            {!isTech && !clientFilter && !categoryFilter && (
               <Link href="/projects/new" className={cn(buttonVariants())}>
                 <Plus className="h-4 w-4 mr-2" />Create your first job
               </Link>
