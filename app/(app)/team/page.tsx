@@ -48,11 +48,11 @@ export default async function TeamPage() {
   const plan = (ownerProfile.plan ?? 'basic') as Plan
 
   const [{ data: members }, { data: teams }] = await Promise.all([
-    supabase.from('profiles').select('*').order('full_name', { ascending: true }),
+    supabase.from('profiles').select('*').neq('role', 'owner').order('full_name', { ascending: true }),
     supabase.from('teams').select('*, lead:profiles!teams_lead_tech_id_fkey(id, full_name), team_members(user_id, profile:profiles(id, full_name, role))').order('name'),
   ])
 
-  const nonOwners = (members ?? []).filter(m => m.role !== 'owner')
+  const nonOwners = members ?? []
   const nonOwnerCount = nonOwners.length
   const leadTechs = nonOwners.filter(m => m.role === 'lead_tech')
   const technicians = nonOwners.filter(m => m.role === 'technician')
