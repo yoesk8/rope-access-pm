@@ -20,7 +20,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
     <UserProvider profile={profile as Profile}>
       <div className="flex h-screen bg-gray-50">
         <Sidebar unreadCount={unreadCount ?? 0} />
-        <main className="flex-1 overflow-auto p-4 pt-18 md:pt-8 md:p-8">
+        <main className="flex-1 overflow-auto p-4 pt-16 pb-24 md:pt-8 md:pb-8 md:p-8">
           {children}
         </main>
       </div>
