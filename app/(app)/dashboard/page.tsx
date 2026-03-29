@@ -71,7 +71,7 @@ export default async function DashboardPage() {
     const active = projects.filter((p: any) => p.status === 'active')
 
     return (
-      <div className="space-y-6 max-w-lg">
+      <div className="space-y-6">
         <div>
           <p className="text-sm text-gray-400">Welcome back{firstName ? `, ${firstName}` : ''}</p>
           <div className="flex items-center gap-2 mt-0.5">
@@ -111,7 +111,7 @@ export default async function DashboardPage() {
     const active = projects.filter((p: any) => p.status === 'active')
 
     return (
-      <div className="space-y-6 max-w-lg">
+      <div className="space-y-6">
         <div>
           <p className="text-sm text-gray-400">Welcome back{firstName ? `, ${firstName}` : ''}</p>
           <div className="flex items-center gap-2 mt-0.5">
@@ -157,7 +157,7 @@ export default async function DashboardPage() {
   ])
 
   return (
-    <div className="space-y-6 max-w-2xl">
+    <div className="space-y-6">
       <div className="flex items-start justify-between gap-4">
         <div>
           <p className="text-sm text-gray-400">Welcome back{firstName ? `, ${firstName}` : ''}</p>
