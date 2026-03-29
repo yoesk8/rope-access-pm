@@ -1,4 +1,5 @@
 import Link from 'next/link'
+import Image from 'next/image'
 import { InviteHandler } from '@/components/invite-handler'
 import { buttonVariants } from '@/components/ui/button-variants'
 import { cn } from '@/lib/utils'
@@ -91,8 +92,19 @@ export default function LandingPage() {
       </header>
 
       {/* Hero */}
-      <section className="relative overflow-hidden bg-gradient-to-b from-slate-900 to-slate-800 text-white">
-        <div className="absolute inset-0 opacity-10" style={{ backgroundImage: 'radial-gradient(circle at 25% 50%, #3b82f6 0%, transparent 50%), radial-gradient(circle at 75% 20%, #1d4ed8 0%, transparent 50%)' }} />
+      <section className="relative overflow-hidden text-white">
+        {/* Background image */}
+        <div className="absolute inset-0">
+          <Image
+            src="/hero.jpg"
+            alt="Rope access technicians working on a building facade"
+            fill
+            className="object-cover object-center"
+            priority
+          />
+          {/* Dark overlay for text legibility */}
+          <div className="absolute inset-0 bg-gradient-to-b from-slate-900/80 via-slate-900/70 to-slate-900/90" />
+        </div>
         <div className="relative max-w-6xl mx-auto px-6 py-28 text-center space-y-8">
           <div className="inline-flex items-center gap-2 bg-blue-500/20 border border-blue-400/30 text-blue-300 text-sm font-medium px-4 py-1.5 rounded-full">
             <ShieldCheck className="h-4 w-4" />
