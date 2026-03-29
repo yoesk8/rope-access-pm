@@ -1,9 +1,7 @@
 import { createClient } from '@/lib/supabase/server'
 import Link from 'next/link'
-import { Suspense } from 'react'
 import { FolderKanban, Users, Clock, MessageSquare, CheckCircle2, Plus, MapPin, Building2, CalendarDays, Tag, HardHat, Shield, ChevronRight } from 'lucide-react'
 import { Card, CardContent } from '@/components/ui/card'
-import { ProjectsFilterBar } from '@/app/(app)/projects/projects-filter-bar'
 import type { ProjectStatus } from '@/types'
 
 const roleLabels: Record<string, { label: string; color: string }> = {
@@ -67,13 +65,7 @@ function JobRow({ p }: { p: any }) {
   )
 }
 
-export default async function DashboardPage({
-  searchParams,
-}: {
-  searchParams: Promise<{ client?: string; category?: string }>
-}) {
-  const { client: clientFilter, category: categoryFilter } = await searchParams
-
+export default async function DashboardPage() {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
   const { data: profile } = await supabase.from('profiles').select('role, plan, full_name').eq('id', user!.id).single()
@@ -162,29 +154,21 @@ export default async function DashboardPage({
   }
 
   // ── ACCOUNT OWNER ──────────────────────────────────────────────
-  let jobsQuery = supabase.from('projects').select('*').order('created_at', { ascending: false })
-  if (clientFilter) jobsQuery = jobsQuery.eq('client', clientFilter)
-  if (categoryFilter) jobsQuery = jobsQuery.eq('job_category', categoryFilter)
-
   const [
     { count: activeCount },
     { count: teamCount },
     { count: pendingTimesheets },
     { count: unreadMessages },
     { data: projects },
-    { data: allProjectsForClients },
     { data: members },
   ] = await Promise.all([
     supabase.from('projects').select('*', { count: 'exact', head: true }).eq('status', 'active'),
     supabase.from('profiles').select('*', { count: 'exact', head: true }).neq('role', 'owner'),
     supabase.from('timesheets').select('*', { count: 'exact', head: true }).eq('status', 'pending'),
     supabase.from('messages').select('*', { count: 'exact', head: true }).eq('to_user', user!.id).is('read_at', null),
-    jobsQuery,
-    supabase.from('projects').select('client').not('client', 'is', null),
+    supabase.from('projects').select('*').order('created_at', { ascending: false }),
     supabase.from('profiles').select('id, full_name, role').neq('role', 'owner').order('full_name'),
   ])
-
-  const clients = [...new Set((allProjectsForClients ?? []).map(p => p.client).filter(Boolean))] as string[]
 
   return (
     <div className="space-y-8">
@@ -219,12 +203,7 @@ export default async function DashboardPage({
       <div className="space-y-4">
         <div className="flex items-center justify-between gap-4 flex-wrap">
           <h2 className="text-lg font-semibold text-gray-900">Jobs</h2>
-          <div className="flex items-center gap-3 flex-wrap">
-            <Suspense>
-              <ProjectsFilterBar clients={clients} />
-            </Suspense>
-            <Link href="/projects" className="text-xs text-gray-400 hover:text-gray-700 transition-colors">View all</Link>
-          </div>
+          <Link href="/projects" className="text-xs text-gray-400 hover:text-gray-700 transition-colors">View all</Link>
         </div>
 
         {projects && projects.length > 0 ? (
@@ -279,10 +258,8 @@ export default async function DashboardPage({
           </div>
         ) : (
           <div className="rounded-2xl border bg-white py-12 text-center">
-            <p className="text-sm text-gray-400 mb-3">
-              {clientFilter || categoryFilter ? 'No jobs match the selected filters.' : 'No jobs yet.'}
-            </p>
-            {!clientFilter && !categoryFilter && (
+            <p className="text-sm text-gray-400 mb-3">No jobs yet.</p>
+            {(
               <Link href="/projects/new" className="inline-flex items-center gap-1.5 rounded-xl bg-gray-900 px-4 py-2 text-sm font-medium text-white hover:bg-gray-700 transition-colors">
                 <Plus className="h-4 w-4" /> Create your first job
               </Link>
