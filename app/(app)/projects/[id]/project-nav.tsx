@@ -5,9 +5,7 @@ import { useSearchParams } from 'next/navigation'
 import {
   LayoutGrid,
   CheckSquare,
-  Camera,
   ClipboardList,
-  BookOpen,
   FileText,
   Users,
   ArrowLeft,
@@ -22,33 +20,26 @@ const statusColors: Record<ProjectStatus, string> = {
   cancelled: 'bg-red-400',
 }
 
-// Tabs visible per role
 const ownerTabs = [
-  { key: 'overview', label: 'Overview', icon: LayoutGrid },
-  { key: 'tasks', label: 'Tasks', icon: CheckSquare },
-  { key: 'photos', label: 'Photos', icon: Camera },
-  { key: 'checklists', label: 'Checklists', icon: ClipboardList },
-  { key: 'logs', label: 'Daily Logs', icon: BookOpen },
-  { key: 'documents', label: 'Documents', icon: FileText },
-  { key: 'team', label: 'Team', icon: Users },
+  { key: 'overview',    label: 'Overview',   icon: LayoutGrid },
+  { key: 'tasks',       label: 'Tasks',       icon: CheckSquare },
+  { key: 'checklists',  label: 'Checklists',  icon: ClipboardList },
+  { key: 'documents',   label: 'Documents',   icon: FileText },
+  { key: 'team',        label: 'Team',        icon: Users },
 ]
 
 const leadTechTabs = [
-  { key: 'overview', label: 'Overview', icon: LayoutGrid },
-  { key: 'tasks', label: 'Tasks', icon: CheckSquare },
-  { key: 'photos', label: 'Photos', icon: Camera },
-  { key: 'checklists', label: 'Checklists', icon: ClipboardList },
-  { key: 'logs', label: 'Daily Logs', icon: BookOpen },
-  { key: 'documents', label: 'Documents', icon: FileText },
+  { key: 'overview',    label: 'Overview',   icon: LayoutGrid },
+  { key: 'tasks',       label: 'Tasks',       icon: CheckSquare },
+  { key: 'checklists',  label: 'Checklists',  icon: ClipboardList },
+  { key: 'documents',   label: 'Documents',   icon: FileText },
 ]
 
 const techTabs = [
-  { key: 'overview', label: 'Overview', icon: LayoutGrid },
-  { key: 'tasks', label: 'Tasks', icon: CheckSquare },
-  { key: 'photos', label: 'Photos', icon: Camera },
-  { key: 'checklists', label: 'Checklists', icon: ClipboardList },
-  { key: 'logs', label: 'Daily Logs', icon: BookOpen },
-  { key: 'documents', label: 'Documents', icon: FileText },
+  { key: 'overview',    label: 'Overview',   icon: LayoutGrid },
+  { key: 'tasks',       label: 'Tasks',       icon: CheckSquare },
+  { key: 'checklists',  label: 'Checklists',  icon: ClipboardList },
+  { key: 'documents',   label: 'Documents',   icon: FileText },
 ]
 
 interface Props {
@@ -110,24 +101,40 @@ export function ProjectNav({ projectId, projectName, projectStatus, role }: Prop
       </aside>
 
       {/* Mobile: horizontal scrolling tab bar */}
-      <div className="md:hidden flex gap-1 bg-gray-900 overflow-x-auto px-3 py-2 -mx-4 -mt-4 mb-4">
-        {tabs.map(item => {
-          const Icon = item.icon
-          const isActive = active === item.key
-          return (
-            <Link
-              key={item.key}
-              href={`/projects/${projectId}?tab=${item.key}`}
-              className={cn(
-                'flex items-center gap-1.5 px-3 py-1.5 rounded text-xs font-medium whitespace-nowrap transition-colors',
-                isActive ? 'bg-white/15 text-white' : 'text-gray-400 hover:text-white'
-              )}
-            >
-              <Icon className="h-3.5 w-3.5" />
-              {item.label}
-            </Link>
-          )
-        })}
+      <div className="md:hidden">
+        {/* Project name bar */}
+        <div className="flex items-center gap-2 px-4 py-3 border-b bg-white">
+          <Link href="/projects" className="flex items-center gap-1 text-xs text-gray-400 hover:text-gray-700 transition-colors shrink-0">
+            <ArrowLeft className="h-3.5 w-3.5" /> Jobs
+          </Link>
+          <span className="text-gray-300 mx-1">·</span>
+          <div className="flex items-center gap-1.5 min-w-0">
+            <span className={cn('h-2 w-2 rounded-full shrink-0', statusColors[projectStatus])} />
+            <p className="text-sm font-semibold text-gray-900 truncate">{projectName}</p>
+          </div>
+        </div>
+        {/* Tabs */}
+        <div className="flex overflow-x-auto border-b bg-white px-2">
+          {tabs.map(item => {
+            const Icon = item.icon
+            const isActive = active === item.key
+            return (
+              <Link
+                key={item.key}
+                href={`/projects/${projectId}?tab=${item.key}`}
+                className={cn(
+                  'flex items-center gap-1.5 px-3 py-2.5 text-xs font-medium whitespace-nowrap transition-colors border-b-2 -mb-px',
+                  isActive
+                    ? 'border-gray-900 text-gray-900'
+                    : 'border-transparent text-gray-400 hover:text-gray-700'
+                )}
+              >
+                <Icon className="h-3.5 w-3.5" />
+                {item.label}
+              </Link>
+            )
+          })}
+        </div>
       </div>
     </>
   )
