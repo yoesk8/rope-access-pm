@@ -35,7 +35,8 @@ export async function proxy(request: NextRequest) {
     return NextResponse.redirect(new URL('/login', request.url))
   }
 
-  if (user && (pathname === '/login' || pathname === '/signup' || pathname === '/')) {
+  const hasError = request.nextUrl.searchParams.has('error')
+  if (user && !hasError && (pathname === '/login' || pathname === '/signup' || pathname === '/')) {
     return NextResponse.redirect(new URL('/dashboard', request.url))
   }
 

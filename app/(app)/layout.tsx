@@ -14,7 +14,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
     supabase.from('messages').select('*', { count: 'exact', head: true }).eq('to_user', user.id).is('read_at', null),
   ])
 
-  if (!profile) redirect('/login')
+  if (!profile) redirect('/login?error=Profile+not+found')
 
   return (
     <UserProvider profile={profile as Profile}>
