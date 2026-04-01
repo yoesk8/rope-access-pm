@@ -84,8 +84,11 @@ export default function LandingPage() {
             <Link href="/pricing" className="text-sm text-gray-600 hover:text-gray-900 hidden sm:block">
               Pricing
             </Link>
-            <Link href="/login" className={cn(buttonVariants({ size: 'sm' }))}>
+            <Link href="/login" className="text-sm text-gray-600 hover:text-gray-900 hidden sm:block">
               Sign in
+            </Link>
+            <Link href="/signup" className={cn(buttonVariants({ size: 'sm' }))}>
+              Get started
             </Link>
           </div>
         </div>
@@ -118,7 +121,7 @@ export default function LandingPage() {
             The complete platform for rope access teams. Manage projects, coordinate technicians, capture site photos, and control compliance documents — from any device, on any site.
           </p>
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4 pt-2">
-            <Link href="/login" className="inline-flex items-center gap-2 bg-blue-600 hover:bg-blue-500 text-white font-semibold px-8 py-3.5 rounded-xl transition-colors text-base">
+            <Link href="/pricing" className="inline-flex items-center gap-2 bg-blue-600 hover:bg-blue-500 text-white font-semibold px-8 py-3.5 rounded-xl transition-colors text-base">
               Get started free <ArrowRight className="h-5 w-5" />
             </Link>
             <Link href="/login" className="inline-flex items-center gap-2 bg-white/10 hover:bg-white/20 text-white font-medium px-8 py-3.5 rounded-xl transition-colors text-base border border-white/20">
@@ -375,7 +378,7 @@ export default function LandingPage() {
           <h2 className="text-4xl font-bold text-white">Ready to get your team organised?</h2>
           <p className="text-blue-100 text-lg">Join rope access contractors who've ditched the spreadsheets.</p>
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4 pt-2">
-            <Link href="/login" className="inline-flex items-center gap-2 bg-white text-blue-600 font-semibold px-8 py-3.5 rounded-xl hover:bg-blue-50 transition-colors text-base">
+            <Link href="/pricing" className="inline-flex items-center gap-2 bg-white text-blue-600 font-semibold px-8 py-3.5 rounded-xl hover:bg-blue-50 transition-colors text-base">
               Get started free <ArrowRight className="h-5 w-5" />
             </Link>
           </div>
