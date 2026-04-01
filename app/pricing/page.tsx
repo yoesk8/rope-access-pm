@@ -6,6 +6,7 @@ import { cn } from '@/lib/utils'
 const plans = [
   {
     name: 'Basic',
+    slug: 'basic',
     price: 'Free',
     period: 'forever',
     description: 'For sole traders and small crews just getting started.',
@@ -27,6 +28,7 @@ const plans = [
   },
   {
     name: 'Field',
+    slug: 'field',
     price: '£29',
     period: 'per user / month',
     description: 'For active rope access teams running multiple jobs.',
@@ -49,6 +51,7 @@ const plans = [
   },
   {
     name: 'Operations',
+    slug: 'operations',
     price: '£49',
     period: 'per user / month',
     description: 'For companies managing multiple teams across many sites.',
@@ -103,7 +106,7 @@ export default function PricingPage() {
           <div className="flex items-center gap-4">
             <Link href="/login" className="text-sm text-gray-600 hover:text-gray-900">Sign in</Link>
             <Link
-              href="/login"
+              href="/signup"
               className="inline-flex items-center gap-1.5 rounded-lg bg-gray-900 px-4 py-2 text-sm font-medium text-white hover:bg-gray-700 transition-colors"
             >
               Get started
@@ -162,7 +165,7 @@ export default function PricingPage() {
               </ul>
 
               <Link
-                href="/login"
+                href={`/signup?plan=${(plan as any).slug}`}
                 className={cn(
                   'flex items-center justify-center gap-2 rounded-xl py-2.5 text-sm font-semibold transition-colors',
                   plan.highlight
