@@ -36,7 +36,7 @@ export async function inviteMember(formData: FormData) {
     const { count } = await supabase
       .from('profiles')
       .select('*', { count: 'exact', head: true })
-      .eq('owner_id', user!.id)
+      .neq('role', 'owner')
     if ((count ?? 0) >= limit) {
       return { error: `Your Basic plan allows up to ${limit} team members. Upgrade to add more.` }
     }

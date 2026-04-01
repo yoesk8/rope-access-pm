@@ -37,7 +37,7 @@ export default async function ProjectDetailPage({
 
   // Fetch user + role first so we can use them in subsequent queries
   const { data: { user } } = await supabase.auth.getUser()
-  const { data: currentProfile } = await supabase.from('profiles').select('role, plan, owner_id').eq('id', user!.id).single()
+  const { data: currentProfile } = await supabase.from('profiles').select('role, plan').eq('id', user!.id).single()
   const currentRole = currentProfile?.role
   const plan = currentProfile?.plan ?? 'basic'
   const isTech = currentRole === 'technician'
