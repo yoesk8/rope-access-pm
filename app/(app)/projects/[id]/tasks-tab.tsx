@@ -44,14 +44,16 @@ interface Props {
   projectId: string
   tasks: Task[]
   members: Pick<Profile, 'id' | 'full_name'>[]
+  canManage: boolean
 }
 
-function TaskCard({ task, projectId, isPending, onCycleStatus, onDelete }: {
+function TaskCard({ task, projectId, isPending, onCycleStatus, onDelete, canManage }: {
   task: Task
   projectId: string
   isPending: boolean
   onCycleStatus: (task: Task) => void
   onDelete: (id: string) => void
+  canManage: boolean
 }) {
   const router = useRouter()
   const [expanded, setExpanded] = useState(false)
@@ -113,13 +115,15 @@ function TaskCard({ task, projectId, isPending, onCycleStatus, onDelete }: {
           >
             <Camera className="h-3.5 w-3.5" />
           </button>
-          <button
-            onClick={() => onDelete(task.id)}
-            disabled={isPending}
-            className="opacity-0 group-hover:opacity-100 text-gray-300 hover:text-red-500 transition-all"
-          >
-            <X className="h-3.5 w-3.5" />
-          </button>
+          {canManage && (
+            <button
+              onClick={() => onDelete(task.id)}
+              disabled={isPending}
+              className="opacity-0 group-hover:opacity-100 text-gray-300 hover:text-red-500 transition-all"
+            >
+              <X className="h-3.5 w-3.5" />
+            </button>
+          )}
         </div>
         <input
           ref={fileRef}
@@ -150,7 +154,7 @@ function TaskCard({ task, projectId, isPending, onCycleStatus, onDelete }: {
   )
 }
 
-export function TasksTab({ projectId, tasks: initialTasks, members }: Props) {
+export function TasksTab({ projectId, tasks: initialTasks, members, canManage }: Props) {
   const router = useRouter()
   const [isPending, startTransition] = useTransition()
   const [showForm, setShowForm] = useState(false)
@@ -210,6 +214,7 @@ export function TasksTab({ projectId, tasks: initialTasks, members }: Props) {
                 isPending={isPending}
                 onCycleStatus={cycleStatus}
                 onDelete={deleteTask}
+                canManage={canManage}
               />
             ))}
           </div>
@@ -220,16 +225,18 @@ export function TasksTab({ projectId, tasks: initialTasks, members }: Props) {
 
   return (
     <div className="space-y-4">
-      <div className="flex justify-end">
-        <button
-          onClick={() => setShowForm(v => !v)}
-          className="inline-flex items-center gap-1.5 rounded-lg bg-gray-900 px-3 py-1.5 text-sm font-medium text-white hover:bg-gray-700 transition-colors"
-        >
-          <Plus className="h-4 w-4" /> New Task
-        </button>
-      </div>
+      {canManage && (
+        <div className="flex justify-end">
+          <button
+            onClick={() => setShowForm(v => !v)}
+            className="inline-flex items-center gap-1.5 rounded-lg bg-gray-900 px-3 py-1.5 text-sm font-medium text-white hover:bg-gray-700 transition-colors"
+          >
+            <Plus className="h-4 w-4" /> New Task
+          </button>
+        </div>
+      )}
 
-      {showForm && (
+      {canManage && showForm && (
         <Card>
           <CardContent className="pt-5">
             <form onSubmit={createTask} className="space-y-3">

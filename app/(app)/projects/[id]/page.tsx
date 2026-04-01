@@ -249,6 +249,7 @@ export default async function ProjectDetailPage({
           projectId={id}
           tasks={(tasks ?? []) as any}
           members={assignableMembers as any}
+          canManage={isOwner || isLeadTech}
         />
       )}
 
