@@ -35,6 +35,16 @@ export default async function ProjectDetailPage({
   const { data: project } = await supabase.from('projects').select('*').eq('id', id).single()
   if (!project) notFound()
 
+  // Fetch user + role first so we can use them in subsequent queries
+  const { data: { user } } = await supabase.auth.getUser()
+  const { data: currentProfile } = await supabase.from('profiles').select('role, plan, owner_id').eq('id', user!.id).single()
+  const currentRole = currentProfile?.role
+  const plan = currentProfile?.plan ?? 'basic'
+  const isTech = currentRole === 'technician'
+  const isLeadTech = currentRole === 'lead_tech'
+  const isOwner = currentRole === 'owner'
+  const canComplete = isOwner || isLeadTech
+
   const [
     { data: members },
     { data: allProfiles },
@@ -45,8 +55,10 @@ export default async function ProjectDetailPage({
     { data: templates },
     { data: submissions },
     { data: logs },
+    { count: activeJobsCount },
   ] = await Promise.all([
     supabase.from('project_members').select('*, profile:profiles(*)').eq('project_id', id),
+    // RLS handles visibility: owners see their team, techs see co-members + their owner
     supabase.from('profiles').select('*').order('full_name'),
     supabase.from('timesheets').select('*, profile:profiles(full_name)').eq('project_id', id).order('date', { ascending: false }).limit(5),
     supabase.from('documents').select('*').eq('project_id', id).order('created_at', { ascending: false }).limit(5),
@@ -55,23 +67,10 @@ export default async function ProjectDetailPage({
     supabase.from('checklist_templates').select('*').order('type'),
     supabase.from('checklist_submissions').select('*, submitter:profiles(full_name), template:checklist_templates(items)').eq('project_id', id).order('created_at', { ascending: false }),
     supabase.from('daily_logs').select('*, creator:profiles(full_name)').eq('project_id', id).order('date', { ascending: false }),
+    supabase.from('projects').select('*', { count: 'exact', head: true }).eq('status', 'active'),
   ])
 
-  const { data: { user } } = await supabase.auth.getUser()
-  const { data: currentProfile } = await supabase.from('profiles').select('role, plan').eq('id', user!.id).single()
-  const currentRole = currentProfile?.role
-  const plan = currentProfile?.plan ?? 'basic'
-
-  const { count: activeJobsCount } = await supabase
-    .from('projects')
-    .select('*', { count: 'exact', head: true })
-    .eq('status', 'active')
-  const isTech = currentRole === 'technician'
-  const isLeadTech = currentRole === 'lead_tech'
-  const isOwner = currentRole === 'owner'
-  const canComplete = isOwner || isLeadTech
-
-  // Find owner to contact (for lead_tech messaging)
+  // Find owner to contact (for tech/lead_tech messaging) — RLS makes owner visible to their team
   const manager = (allProfiles ?? []).find(p => p.role === 'owner')
 
   const totalHours = timesheets?.reduce((sum, t) => sum + (t.hours ?? 0), 0) ?? 0
