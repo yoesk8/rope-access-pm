@@ -29,13 +29,13 @@ export async function proxy(request: NextRequest) {
 
   const { pathname } = request.nextUrl
 
-  const publicPaths = ['/', '/login', '/set-password', '/auth/confirm', '/pricing']
+  const publicPaths = ['/', '/login', '/signup', '/set-password', '/auth/confirm', '/pricing']
 
   if (!user && !publicPaths.includes(pathname)) {
     return NextResponse.redirect(new URL('/login', request.url))
   }
 
-  if (user && (pathname === '/login' || pathname === '/')) {
+  if (user && (pathname === '/login' || pathname === '/signup' || pathname === '/')) {
     return NextResponse.redirect(new URL('/dashboard', request.url))
   }
 
