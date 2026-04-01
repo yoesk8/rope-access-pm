@@ -33,14 +33,25 @@ export default async function ProjectsPage({
 
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
-  const { data: profile } = await supabase.from('profiles').select('role').eq('id', user!.id).single()
+  const { data: profile } = await supabase.from('profiles').select('role, plan').eq('id', user!.id).single()
   const isTech = profile?.role === 'technician'
+  const isLeadTech = profile?.role === 'lead_tech'
+  const plan = profile?.plan ?? 'basic'
 
   // RLS already filters by membership for techs — just fetch all visible projects
   let query = supabase.from('projects').select('*').order('created_at', { ascending: false })
   if (clientFilter) query = query.eq('client', clientFilter)
   if (categoryFilter) query = query.eq('job_category', categoryFilter)
+  // Technicians and lead techs only see active/completed jobs
+  if (isTech || isLeadTech) query = query.in('status', ['active', 'completed'])
   const { data: projects } = await query
+
+  // Count active jobs for basic plan limit
+  const { count: activeJobsCount } = await supabase
+    .from('projects')
+    .select('*', { count: 'exact', head: true })
+    .eq('status', 'active')
+  const atActiveLimit = plan === 'basic' && (activeJobsCount ?? 0) >= 3
 
   // Unique clients for filter dropdown
   const { data: allProjects } = await supabase.from('projects').select('client').not('client', 'is', null)
@@ -51,9 +62,15 @@ export default async function ProjectsPage({
       <div className="flex items-center justify-between gap-4 flex-wrap">
         <h1 className="text-2xl font-bold text-gray-900">{isTech ? 'My Jobs' : 'Jobs'}</h1>
         {!isTech && (
-          <Link href="/projects/new" className={cn(buttonVariants())}>
-            <Plus className="h-4 w-4 mr-2" />New Job
-          </Link>
+          atActiveLimit ? (
+            <Link href="/pricing" className={cn(buttonVariants({ variant: 'outline' }), 'text-orange-600 border-orange-300 hover:bg-orange-50')}>
+              3 active job limit reached — Upgrade
+            </Link>
+          ) : (
+            <Link href="/projects/new" className={cn(buttonVariants())}>
+              <Plus className="h-4 w-4 mr-2" />New Job
+            </Link>
+          )
         )}
       </div>
 

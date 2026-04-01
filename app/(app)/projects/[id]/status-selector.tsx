@@ -12,12 +12,20 @@ const statuses = [
   { value: 'cancelled', label: 'Cancelled', color: 'bg-red-100 text-red-700 border-red-200' },
 ]
 
-export function StatusSelector({ projectId, currentStatus }: { projectId: string; currentStatus: string }) {
+interface Props {
+  projectId: string
+  currentStatus: string
+  plan: string
+  activeJobsCount: number
+}
+
+export function StatusSelector({ projectId, currentStatus, plan, activeJobsCount }: Props) {
   const router = useRouter()
   const [open, setOpen] = useState(false)
   const [isPending, startTransition] = useTransition()
 
   const current = statuses.find(s => s.value === currentStatus) ?? statuses[0]
+  const atActiveLimit = plan === 'basic' && activeJobsCount >= 3
 
   async function changeStatus(value: string) {
     if (value === currentStatus) { setOpen(false); return }
@@ -41,22 +49,41 @@ export function StatusSelector({ projectId, currentStatus }: { projectId: string
       {open && (
         <>
           <div className="fixed inset-0 z-10" onClick={() => setOpen(false)} />
-          <div className="absolute left-0 top-full mt-1 z-20 w-36 rounded-xl border bg-white shadow-lg overflow-hidden">
-            {statuses.map(s => (
-              <button
-                key={s.value}
-                onClick={() => changeStatus(s.value)}
-                className={`w-full flex items-center gap-2 px-3 py-2 text-sm text-left hover:bg-gray-50 transition-colors ${s.value === currentStatus ? 'font-semibold' : ''}`}
+          <div className="absolute left-0 top-full mt-1 z-20 w-48 rounded-xl border bg-white shadow-lg overflow-hidden">
+            {statuses.map(s => {
+              const blocked = s.value === 'active' && atActiveLimit && currentStatus !== 'active'
+              return (
+                <button
+                  key={s.value}
+                  onClick={() => !blocked && changeStatus(s.value)}
+                  disabled={blocked}
+                  title={blocked ? 'Upgrade your plan to have more than 3 active jobs' : undefined}
+                  className={`w-full flex items-center gap-2 px-3 py-2 text-sm text-left transition-colors ${
+                    blocked
+                      ? 'opacity-40 cursor-not-allowed'
+                      : 'hover:bg-gray-50'
+                  } ${s.value === currentStatus ? 'font-semibold' : ''}`}
+                >
+                  <span className={`inline-block h-2 w-2 rounded-full ${
+                    s.value === 'active' ? 'bg-green-500' :
+                    s.value === 'draft' ? 'bg-yellow-400' :
+                    s.value === 'completed' ? 'bg-gray-400' :
+                    'bg-red-400'
+                  }`} />
+                  {s.label}
+                  {blocked && <span className="ml-auto text-xs text-orange-500">Upgrade</span>}
+                </button>
+              )
+            })}
+            {atActiveLimit && currentStatus !== 'active' && (
+              <a
+                href="/pricing"
+                className="block px-3 py-2 text-xs text-orange-600 bg-orange-50 hover:bg-orange-100 transition-colors border-t"
+                onClick={() => setOpen(false)}
               >
-                <span className={`inline-block h-2 w-2 rounded-full ${
-                  s.value === 'active' ? 'bg-green-500' :
-                  s.value === 'draft' ? 'bg-yellow-400' :
-                  s.value === 'completed' ? 'bg-gray-400' :
-                  'bg-red-400'
-                }`} />
-                {s.label}
-              </button>
-            ))}
+                3 active job limit (Basic plan) — Upgrade →
+              </a>
+            )}
           </div>
         </>
       )}

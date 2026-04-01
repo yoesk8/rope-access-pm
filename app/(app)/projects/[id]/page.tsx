@@ -58,8 +58,14 @@ export default async function ProjectDetailPage({
   ])
 
   const { data: { user } } = await supabase.auth.getUser()
-  const { data: currentProfile } = await supabase.from('profiles').select('role').eq('id', user!.id).single()
+  const { data: currentProfile } = await supabase.from('profiles').select('role, plan').eq('id', user!.id).single()
   const currentRole = currentProfile?.role
+  const plan = currentProfile?.plan ?? 'basic'
+
+  const { count: activeJobsCount } = await supabase
+    .from('projects')
+    .select('*', { count: 'exact', head: true })
+    .eq('status', 'active')
   const isTech = currentRole === 'technician'
   const isLeadTech = currentRole === 'lead_tech'
   const isOwner = currentRole === 'owner'
@@ -79,7 +85,7 @@ export default async function ProjectDetailPage({
         <div className="flex flex-1 items-center gap-3 flex-wrap">
           <h1 className="text-2xl font-bold text-gray-900">{project.name}</h1>
           {isOwner ? (
-            <StatusSelector projectId={id} currentStatus={project.status} />
+            <StatusSelector projectId={id} currentStatus={project.status} plan={plan} activeJobsCount={activeJobsCount ?? 0} />
           ) : (
             <span className={`text-xs font-medium px-2 py-1 rounded-full ${statusColors[project.status as ProjectStatus]}`}>
               {project.status}

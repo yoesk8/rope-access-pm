@@ -58,11 +58,23 @@ export default function NewProjectPage() {
   const [customTools, setCustomTools] = useState<{ id: string; name: string }[]>([])
   const [newTool, setNewTool] = useState('')
   const [addingTool, setAddingTool] = useState(false)
+  const [activeJobsCount, setActiveJobsCount] = useState(0)
+  const [plan, setPlan] = useState<string>('basic')
 
   useEffect(() => {
     const supabase = createClient()
     supabase.from('custom_tools').select('id, name').order('created_at').then(({ data }) => {
       if (data) setCustomTools(data)
+    })
+    // Fetch plan and active jobs count for limit enforcement
+    supabase.auth.getUser().then(({ data: { user } }) => {
+      if (!user) return
+      supabase.from('profiles').select('plan').eq('id', user.id).single().then(({ data }) => {
+        if (data) setPlan(data.plan ?? 'basic')
+      })
+    })
+    supabase.from('projects').select('*', { count: 'exact', head: true }).eq('status', 'active').then(({ count }) => {
+      setActiveJobsCount(count ?? 0)
     })
   }, [])
 
@@ -107,8 +119,14 @@ export default function NewProjectPage() {
     setTools(t => t.includes(tool) ? t.filter(x => x !== tool) : [...t, tool])
   }
 
+  const atActiveLimit = plan === 'basic' && activeJobsCount >= 3
+
   async function handleSubmit(e: React.SyntheticEvent<HTMLFormElement>) {
     e.preventDefault()
+    if (form.status === 'active' && atActiveLimit) {
+      setError('You have reached the 3 active job limit on the Basic plan. Upgrade to activate more jobs, or save this as a Draft.')
+      return
+    }
     setLoading(true)
     setError('')
 
@@ -175,10 +193,13 @@ export default function NewProjectPage() {
               <Field label="Status">
                 <select className={selectCls} value={form.status} onChange={e => set('status', e.target.value)}>
                   <option value="draft">Draft</option>
-                  <option value="active">Active</option>
+                  <option value="active" disabled={atActiveLimit}>{atActiveLimit ? 'Active (limit reached)' : 'Active'}</option>
                   <option value="completed">Completed</option>
                   <option value="cancelled">Cancelled</option>
                 </select>
+                {atActiveLimit && (
+                  <p className="text-xs text-orange-600 mt-1">3 active job limit reached on Basic plan. <a href="/pricing" className="underline font-medium">Upgrade</a> to activate more jobs.</p>
+                )}
               </Field>
               <Field label="Start Date">
                 <input type="date" className={inputCls} value={form.start_date} onChange={e => set('start_date', e.target.value)} />
