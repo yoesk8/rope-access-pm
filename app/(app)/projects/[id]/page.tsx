@@ -129,7 +129,7 @@ export default async function ProjectDetailPage({
                 {(project as any).access_type && (
                   <div className="flex items-start gap-2 text-sm text-gray-600">
                     <ArrowUpFromLine className="h-4 w-4 text-gray-400 mt-0.5 shrink-0" />
-                    <span><span className="font-medium">Access:</span> {(project as any).access_type.replace(/_/g, ' ').toUpperCase()}</span>
+                    <span><span className="font-medium">Site Access:</span> {(project as any).access_type}</span>
                   </div>
                 )}
                 {(project as any).max_height && (

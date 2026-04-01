@@ -24,14 +24,6 @@ const JOB_CATEGORIES = [
   { value: 'other', label: 'Other' },
 ]
 
-const ACCESS_TYPES = [
-  { value: 'srt', label: 'Single Rope Technique (SRT)' },
-  { value: 'work_positioning', label: 'Work Positioning' },
-  { value: 'rope_access', label: 'Industrial Rope Access (IRATA)' },
-  { value: 'bosuns_chair', label: "Bosun's Chair" },
-  { value: 'abseiling', label: 'Abseiling' },
-  { value: 'other', label: 'Other' },
-]
 
 const TOOLS = [
   'Working line rope', 'Safety line rope', 'Descender (I\'D / Stop)', 'Hand ascender',
@@ -212,11 +204,13 @@ export default function NewProjectPage() {
                   {JOB_CATEGORIES.map(c => <option key={c.value} value={c.value}>{c.label}</option>)}
                 </select>
               </Field>
-              <Field label="Access Type">
-                <select className={selectCls} value={form.access_type} onChange={e => set('access_type', e.target.value)}>
-                  <option value="">Select access type…</option>
-                  {ACCESS_TYPES.map(a => <option key={a.value} value={a.value}>{a.label}</option>)}
-                </select>
+              <Field label="Access to Work Area">
+                <input
+                  className={inputCls}
+                  value={form.access_type}
+                  onChange={e => set('access_type', e.target.value)}
+                  placeholder="e.g. Roof hatch, north side — code 4821"
+                />
               </Field>
             </div>
             <Field label="Maximum Working Height (metres)">
