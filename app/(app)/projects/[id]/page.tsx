@@ -7,7 +7,7 @@ import type { ProjectStatus, Profile } from '@/types'
 import { ManageTeamDialog } from './manage-team-dialog'
 import { OverviewTasksCard } from './overview-tasks-card'
 import { ContactManagerDialog } from '@/components/contact-manager-dialog'
-import { MarkCompleteButton } from './mark-complete-button'
+import { StatusSelector } from './status-selector'
 import { TasksTab } from './tasks-tab'
 import { PhotosTab } from './photos-tab'
 import { ChecklistsTab } from './checklists-tab'
@@ -78,9 +78,13 @@ export default async function ProjectDetailPage({
       <div className="flex items-center gap-3 flex-wrap">
         <div className="flex flex-1 items-center gap-3 flex-wrap">
           <h1 className="text-2xl font-bold text-gray-900">{project.name}</h1>
-          <span className={`text-xs font-medium px-2 py-1 rounded-full ${statusColors[project.status as ProjectStatus]}`}>
-            {project.status}
-          </span>
+          {isOwner ? (
+            <StatusSelector projectId={id} currentStatus={project.status} />
+          ) : (
+            <span className={`text-xs font-medium px-2 py-1 rounded-full ${statusColors[project.status as ProjectStatus]}`}>
+              {project.status}
+            </span>
+          )}
         </div>
         {(isTech || isLeadTech) && manager && (
           <ContactManagerDialog
@@ -89,9 +93,6 @@ export default async function ProjectDetailPage({
             managerId={manager.id}
             managerName={manager.full_name ?? 'Manager'}
           />
-        )}
-        {canComplete && project.status === 'active' && (
-          <MarkCompleteButton projectId={id} />
         )}
       </div>
 
