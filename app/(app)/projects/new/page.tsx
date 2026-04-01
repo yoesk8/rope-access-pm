@@ -1,11 +1,11 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import Link from 'next/link'
-import { ArrowLeft, Check } from 'lucide-react'
+import { ArrowLeft, Check, Plus } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
 const JOB_CATEGORIES = [
@@ -63,6 +63,31 @@ export default function NewProjectPage() {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const [tools, setTools] = useState<string[]>([])
+  const [customTools, setCustomTools] = useState<{ id: string; name: string }[]>([])
+  const [newTool, setNewTool] = useState('')
+  const [addingTool, setAddingTool] = useState(false)
+
+  useEffect(() => {
+    const supabase = createClient()
+    supabase.from('custom_tools').select('id, name').order('created_at').then(({ data }) => {
+      if (data) setCustomTools(data)
+    })
+  }, [])
+
+  async function addCustomTool() {
+    const name = newTool.trim()
+    if (!name) return
+    setAddingTool(true)
+    const supabase = createClient()
+    const { data: { user } } = await supabase.auth.getUser()
+    const { data } = await supabase.from('custom_tools').insert({ name, owner_id: user!.id }).select('id, name').single()
+    if (data) {
+      setCustomTools(prev => [...prev, data])
+      setTools(prev => [...prev, data.name])
+    }
+    setNewTool('')
+    setAddingTool(false)
+  }
   const [form, setForm] = useState({
     name: '',
     client: '',
@@ -265,9 +290,9 @@ export default function NewProjectPage() {
           <CardHeader>
             <CardTitle>Tools &amp; Equipment Needed</CardTitle>
           </CardHeader>
-          <CardContent>
+          <CardContent className="space-y-4">
             <div className="flex flex-wrap gap-2">
-              {TOOLS.map(tool => {
+              {[...TOOLS, ...customTools.map(t => t.name)].map(tool => {
                 const selected = tools.includes(tool)
                 return (
                   <button
@@ -287,8 +312,29 @@ export default function NewProjectPage() {
                 )
               })}
             </div>
+
+            {/* Add custom tool */}
+            <div className="flex items-center gap-2 pt-1 border-t">
+              <input
+                type="text"
+                value={newTool}
+                onChange={e => setNewTool(e.target.value)}
+                onKeyDown={e => e.key === 'Enter' && (e.preventDefault(), addCustomTool())}
+                placeholder="Add a custom tool…"
+                className="flex-1 rounded-lg border border-gray-200 px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-gray-900"
+              />
+              <button
+                type="button"
+                onClick={addCustomTool}
+                disabled={!newTool.trim() || addingTool}
+                className="inline-flex items-center gap-1 rounded-lg bg-gray-900 px-3 py-1.5 text-sm font-medium text-white hover:bg-gray-700 disabled:opacity-40 transition-colors"
+              >
+                <Plus className="h-3.5 w-3.5" /> Add
+              </button>
+            </div>
+
             {tools.length > 0 && (
-              <p className="text-xs text-gray-400 mt-3">{tools.length} item{tools.length !== 1 ? 's' : ''} selected</p>
+              <p className="text-xs text-gray-400">{tools.length} item{tools.length !== 1 ? 's' : ''} selected</p>
             )}
           </CardContent>
         </Card>
