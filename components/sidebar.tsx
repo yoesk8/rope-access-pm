@@ -10,7 +10,7 @@ import {
   LayoutDashboard,
   FolderKanban,
   Users,
-  Clock,
+  Package,
   LogOut,
   MessageSquare,
 } from 'lucide-react'
@@ -24,7 +24,7 @@ function useNav() {
     { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard, show: true },
     { href: '/projects', label: isOwner ? 'Jobs' : 'My Jobs', icon: FolderKanban, show: true },
     { href: '/team', label: 'Team', icon: Users, show: isOwner },
-    { href: '/timesheets', label: 'Timesheets', icon: Clock, show: isOwner || isLeadTech },
+    { href: '/inventory', label: 'Inventory', icon: Package, show: true },
     {
       href: '/messages',
       label: 'Messages',

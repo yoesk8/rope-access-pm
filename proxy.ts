@@ -46,16 +46,16 @@ export async function proxy(request: NextRequest) {
     const role = profile?.role
     const plan = profile?.plan ?? 'basic'
 
-    // Technicians: only /dashboard and /projects routes
+    // Technicians: only /dashboard, /projects, /inventory
     if (role === 'technician') {
-      const allowed = ['/dashboard', '/projects']
+      const allowed = ['/dashboard', '/projects', '/inventory']
       const isAllowed = allowed.some(p => pathname === p || pathname.startsWith(p + '/'))
       if (!isAllowed) return NextResponse.redirect(new URL('/dashboard', request.url))
     }
 
-    // Lead techs: /dashboard, /projects, /messages
+    // Lead techs: blocked from /team and /documents
     if (role === 'lead_tech') {
-      const blocked = ['/team', '/documents', '/timesheets']
+      const blocked = ['/team', '/documents']
       const isBlocked = blocked.some(p => pathname === p || pathname.startsWith(p + '/'))
       if (isBlocked) return NextResponse.redirect(new URL('/dashboard', request.url))
     }

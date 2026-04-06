@@ -1,7 +1,8 @@
 export type Role = 'owner' | 'lead_tech' | 'technician'
 export type Plan = 'basic' | 'field' | 'operations'
 export type ProjectStatus = 'draft' | 'active' | 'completed' | 'cancelled'
-export type TimesheetStatus = 'pending' | 'approved' | 'rejected'
+export type InventoryType = 'personal' | 'company'
+export type InventoryStatus = 'active' | 'maintenance' | 'retired'
 export type DocumentType = 'risk_assessment' | 'method_statement' | 'inspection_report' | 'certificate' | 'other'
 
 export interface Profile {
@@ -34,18 +35,18 @@ export interface ProjectMember {
   profile?: Profile
 }
 
-export interface Timesheet {
+export interface InventoryItem {
   id: string
-  project_id: string
-  user_id: string
-  date: string
-  hours: number
-  description: string | null
-  status: TimesheetStatus
-  approved_by: string | null
+  owner_id: string
+  name: string
+  category: string
+  type: InventoryType
+  assigned_to: string | null
+  serial_number: string | null
+  status: InventoryStatus
+  notes: string | null
   created_at: string
-  project?: Project
-  profile?: Profile
+  assignee?: Profile | null
 }
 
 export interface Document {
