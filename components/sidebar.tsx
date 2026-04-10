@@ -58,20 +58,24 @@ function NavLink({
         href={href}
         onClick={onClick}
         className={cn(
-          'flex flex-col items-center gap-1 px-3 py-2 text-xs font-medium transition-colors relative',
-          active ? 'text-gray-900' : 'text-gray-400 hover:text-gray-700'
+          'flex flex-1 flex-col items-center justify-center gap-1 py-2 text-xs font-medium transition-all duration-150 active:scale-95',
+          active
+            ? 'text-gray-900'
+            : 'text-gray-400 hover:text-gray-600 hover:bg-gray-50'
         )}
       >
-        <div className="relative">
-          <Icon className="h-5 w-5" />
+        <div className={cn(
+          'relative flex items-center justify-center rounded-xl w-10 h-7 transition-colors duration-150',
+          active ? 'bg-gray-900' : 'hover:bg-gray-100'
+        )}>
+          <Icon className={cn('h-5 w-5', active ? 'text-white' : '')} />
           {badge ? (
             <span className="absolute -top-1 -right-1 h-4 w-4 rounded-full bg-red-500 text-[10px] font-bold text-white flex items-center justify-center">
               {badge > 9 ? '9+' : badge}
             </span>
           ) : null}
         </div>
-        {label}
-        {active && <span className="absolute bottom-0 left-1/2 -translate-x-1/2 h-0.5 w-6 rounded-full bg-gray-900" />}
+        <span className={active ? 'text-gray-900 font-semibold' : ''}>{label}</span>
       </Link>
     )
   }
