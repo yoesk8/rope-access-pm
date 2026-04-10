@@ -66,6 +66,24 @@ function SignupForm() {
     // If session returned immediately (email confirm disabled), also set plan on profile
     if (data.session && data.user) {
       await supabase.from('profiles').update({ plan, role: 'owner', full_name: fullName }).eq('id', data.user.id)
+
+      if (plan === 'field' || plan === 'operations') {
+        // Redirect to Stripe Checkout for paid plans
+        const res = await fetch('/api/stripe/checkout', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ plan }),
+        })
+        const { url, error: checkoutError } = await res.json()
+        if (checkoutError || !url) {
+          setError('Failed to start checkout. Please try again.')
+          setLoading(false)
+          return
+        }
+        window.location.href = url
+        return
+      }
+
       router.push('/dashboard')
       router.refresh()
     } else {
