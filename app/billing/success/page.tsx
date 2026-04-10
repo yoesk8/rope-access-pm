@@ -1,6 +1,6 @@
 import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
-import { stripe } from '@/lib/stripe'
+import { getStripe } from '@/lib/stripe'
 import Link from 'next/link'
 import { CheckCircle } from 'lucide-react'
 
@@ -17,7 +17,7 @@ export default async function BillingSuccessPage({
   if (!user) redirect('/login')
 
   // Verify the checkout session with Stripe
-  const session = await stripe.checkout.sessions.retrieve(session_id)
+  const session = await getStripe().checkout.sessions.retrieve(session_id)
 
   if (session.payment_status === 'paid' || session.status === 'complete') {
     await supabase.from('profiles').update({
