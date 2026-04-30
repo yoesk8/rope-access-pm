@@ -15,6 +15,7 @@ export interface Profile {
   created_at: string
 }
 
+/** Core project fields stored on all projects. */
 export interface Project {
   id: string
   name: string
@@ -26,6 +27,24 @@ export interface Project {
   end_date: string | null
   created_by: string
   created_at: string
+}
+
+/**
+ * Full database row for a project, including rope-access-specific fields
+ * added in migration 002. Use this type when selecting `*` from the projects
+ * table so that rope-access fields don't require `as any` casts.
+ */
+export interface ProjectRow extends Project {
+  job_category: string | null
+  access_type: string | null
+  max_height: number | null
+  anchor_points: string | null
+  rigging_details: string | null
+  risk_considerations: string | null
+  site_contact_name: string | null
+  site_contact_role: string | null
+  site_contact_phone: string | null
+  tools_needed: string[] | null
 }
 
 export interface ProjectMember {

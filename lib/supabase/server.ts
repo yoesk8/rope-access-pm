@@ -17,7 +17,11 @@ export async function createClient() {
             cookiesToSet.forEach(({ name, value, options }) =>
               cookieStore.set(name, value, options)
             )
-          } catch {}
+          } catch {
+            // `cookies()` is read-only inside Server Components; the catch
+            // silences the error there while still allowing Middleware and
+            // Route Handlers (which can write cookies) to work normally.
+          }
         },
       },
     }

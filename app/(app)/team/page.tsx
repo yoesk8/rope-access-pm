@@ -1,55 +1,39 @@
 import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 import { Card, CardContent } from '@/components/ui/card'
-import { Phone, Users, Crown, Shield, HardHat } from 'lucide-react'
+import { Phone, Users } from 'lucide-react'
+import { ROLE_COLORS, ROLE_LABELS, ROLE_ICONS, PLAN_LABELS, PLAN_COLORS } from '@/lib/constants'
 import { InviteDialog } from './invite-dialog'
 import { DeleteMemberButton } from './delete-member-button'
 import { CreateTeamDialog } from './create-team-dialog'
 import { DeleteTeamButton } from './delete-team-button'
 import type { Role, Plan } from '@/types'
 
-const roleColors: Record<Role, string> = {
-  owner: 'bg-purple-100 text-purple-700',
-  lead_tech: 'bg-orange-100 text-orange-700',
-  technician: 'bg-gray-100 text-gray-600',
-}
-
-const roleLabels: Record<Role, string> = {
-  owner: 'Account Owner',
-  lead_tech: 'Lead Tech',
-  technician: 'Technician',
-}
-
-const roleIcons: Record<Role, React.ElementType> = {
-  owner: Crown,
-  lead_tech: Shield,
-  technician: HardHat,
-}
-
-const planLabels: Record<Plan, string> = {
-  basic: 'Basic (Free)',
-  field: 'Field',
-  operations: 'Operations',
-}
-
-const planColors: Record<Plan, string> = {
-  basic: 'bg-gray-100 text-gray-600',
-  field: 'bg-blue-100 text-blue-700',
-  operations: 'bg-purple-100 text-purple-700',
-}
-
 export default async function TeamPage() {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
-  const { data: ownerProfile } = await supabase.from('profiles').select('role, plan').eq('id', user!.id).single()
+  const { data: ownerProfile } = await supabase
+    .from('profiles')
+    .select('role, plan')
+    .eq('id', user!.id)
+    .single()
 
+  // This page is owner-only; middleware already blocks other roles but we double-check here.
   if (ownerProfile?.role !== 'owner') redirect('/dashboard')
 
   const plan = (ownerProfile.plan ?? 'basic') as Plan
 
   const [{ data: members }, { data: teams }] = await Promise.all([
-    supabase.from('profiles').select('*').neq('role', 'owner').neq('id', user!.id).order('full_name', { ascending: true }),
-    supabase.from('teams').select('*, lead:profiles!teams_lead_tech_id_fkey(id, full_name), team_members(user_id, profile:profiles(id, full_name, role))').order('name'),
+    supabase
+      .from('profiles')
+      .select('*')
+      .neq('role', 'owner')
+      .neq('id', user!.id)
+      .order('full_name', { ascending: true }),
+    supabase
+      .from('teams')
+      .select('*, lead:profiles!teams_lead_tech_id_fkey(id, full_name), team_members(user_id, profile:profiles(id, full_name, role))')
+      .order('name'),
   ])
 
   const nonOwners = members ?? []
@@ -57,6 +41,7 @@ export default async function TeamPage() {
   const leadTechs = nonOwners.filter(m => m.role === 'lead_tech')
   const technicians = nonOwners.filter(m => m.role === 'technician')
 
+  // Basic plan caps the team at 3 members.
   const planLimit = plan === 'basic' ? 3 : null
 
   return (
@@ -67,8 +52,8 @@ export default async function TeamPage() {
           <div>
             <h1 className="text-2xl font-bold text-gray-900">Team</h1>
             <div className="flex items-center gap-2 mt-1">
-              <span className={`text-xs font-medium px-2 py-0.5 rounded-full ${planColors[plan]}`}>
-                {planLabels[plan]}
+              <span className={`text-xs font-medium px-2 py-0.5 rounded-full ${PLAN_COLORS[plan]}`}>
+                {PLAN_LABELS[plan]}
               </span>
               {planLimit && (
                 <span className="text-xs text-gray-400">
@@ -91,7 +76,7 @@ export default async function TeamPage() {
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {nonOwners.map(member => {
               const role = member.role as Role
-              const RoleIcon = roleIcons[role] ?? HardHat
+              const RoleIcon = ROLE_ICONS[role]
               return (
                 <Card key={member.id} className="group">
                   <CardContent className="p-5">
@@ -102,8 +87,8 @@ export default async function TeamPage() {
                       <div className="min-w-0 flex-1">
                         <div className="flex items-center justify-between gap-2 flex-wrap">
                           <p className="font-semibold text-gray-900 truncate">{member.full_name ?? 'Unnamed'}</p>
-                          <span className={`text-xs font-medium px-2 py-0.5 rounded-full shrink-0 ${roleColors[role]}`}>
-                            {roleLabels[role] ?? role}
+                          <span className={`text-xs font-medium px-2 py-0.5 rounded-full shrink-0 ${ROLE_COLORS[role]}`}>
+                            {ROLE_LABELS[role]}
                           </span>
                         </div>
                         {member.phone && (
@@ -143,7 +128,9 @@ export default async function TeamPage() {
           <div className="flex items-center justify-between">
             <div>
               <h2 className="text-xl font-bold text-gray-900">Teams</h2>
-              <p className="text-sm text-gray-500 mt-0.5">Group technicians under a lead tech — assign the whole team to a job at once.</p>
+              <p className="text-sm text-gray-500 mt-0.5">
+                Group technicians under a lead tech — assign the whole team to a job at once.
+              </p>
             </div>
             <CreateTeamDialog leadTechs={leadTechs as any} technicians={technicians as any} />
           </div>

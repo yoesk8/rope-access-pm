@@ -35,32 +35,35 @@ export async function proxy(request: NextRequest) {
     return NextResponse.redirect(new URL('/login', request.url))
   }
 
+  // Skip the authenticated-user redirect when Supabase appends ?error= to the URL
+  // (e.g. after a failed email confirmation) so the error message stays visible.
   const hasError = request.nextUrl.searchParams.has('error')
   if (user && !hasError && (pathname === '/login' || pathname === '/signup' || pathname === '/')) {
     return NextResponse.redirect(new URL('/dashboard', request.url))
   }
 
-  // Role-based route protection
+  // Role-based route protection — enforced here in addition to RLS so that
+  // restricted pages never render at all for unauthorised roles.
   if (user) {
     const { data: profile } = await supabase.from('profiles').select('role, plan').eq('id', user.id).single()
     const role = profile?.role
     const plan = profile?.plan ?? 'basic'
 
-    // Technicians: only /dashboard, /projects, /inventory
+    // Technicians can only access job-related pages; everything else redirects to dashboard.
     if (role === 'technician') {
       const allowed = ['/dashboard', '/projects', '/inventory']
       const isAllowed = allowed.some(p => pathname === p || pathname.startsWith(p + '/'))
       if (!isAllowed) return NextResponse.redirect(new URL('/dashboard', request.url))
     }
 
-    // Lead techs: blocked from /team and /documents
+    // Lead techs cannot manage team membership or the document library — owner-only features.
     if (role === 'lead_tech') {
       const blocked = ['/team', '/documents']
       const isBlocked = blocked.some(p => pathname === p || pathname.startsWith(p + '/'))
       if (isBlocked) return NextResponse.redirect(new URL('/dashboard', request.url))
     }
 
-    // Owner on basic plan: no /messages route
+    // Messaging requires a paid plan; owners on the free tier are redirected away.
     if (role === 'owner' && plan === 'basic') {
       if (pathname === '/messages' || pathname.startsWith('/messages/')) {
         return NextResponse.redirect(new URL('/dashboard', request.url))
